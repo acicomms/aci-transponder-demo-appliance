@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.2-udp-us915
+
+Changes:
+
+- Confirmed ChirpStack Docker baseline works in WSL2 / Docker Desktop
+- Disabled Basics Station Gateway Bridge
+- Selected Semtech UDP Packet Forwarder as gateway interface
+- Exposed UDP port 1700
+- Changed MQTT topic prefix from `eu868` to `us915_0`
+- Documented ACI GFSK-over-coax Layer 1 difference
+
+Pending:
+
+- ACI NMS container
+- Real ACI gateway packet forwarder test
+- Dell OptiPlex Ubuntu Server deployment
+- Golden image creation
+
 ## v0.1-lab-test
 
 Initial working ChirpStack Docker baseline.

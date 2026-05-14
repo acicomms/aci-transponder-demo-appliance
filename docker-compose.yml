@@ -41,6 +41,20 @@ services:
   #   depends_on:
   #     - mosquitto
 
+  # aci-nms:
+  #   image: ghcr.io/jefflu-aci/aci-transponder-nms:latest
+  #   container_name: aci-transponder-nms
+  #   restart: unless-stopped
+  #   ports:
+  #     - "${NMS_PORT:-3000}:3000"
+  #   environment:
+  #     - MQTT_HOST=mosquitto
+  #     - MQTT_PORT=1883
+  #     - CHIRPSTACK_API_URL=http://chirpstack:8080
+  #   depends_on:
+  #     - mosquitto
+  #     - chirpstack
+
   chirpstack-rest-api:
     image: chirpstack/chirpstack-rest-api:4
     restart: unless-stopped

@@ -50,16 +50,7 @@
 Ubuntu Server 24.04 LTS
 ```
 
-不建議在客戶現場 demo appliance 上使用 Windows + WSL2 作為主要部署方式。
-
-原因是 onsite appliance 需要：
-
-- 開機後自動啟動服務
-- power outage 後可自動恢復
-- Docker service 穩定運作
-- 遠端 SSH 維護簡單
-- 網路設定清楚
-- 減少 Windows Update / WSL networking 額外複雜度
+不建議在客戶現場 demo appliance 上使用 Windows + WSL2 。
 
 ---
 
@@ -72,7 +63,7 @@ Ubuntu Server 24.04 LTS
 - Redis
 - MQTT broker
 - ChirpStack Gateway Bridge
-- ACI NMS - (TBD)
+- ACI NMS
 - Tailscale remote SSH support
 
 ---
@@ -136,8 +127,6 @@ aci-transponder-demo-appliance/
 - ChirpStack Gateway Bridge config
 - Mosquitto MQTT config
 - PostgreSQL initialization scripts
-
-請注意，目前使用的是 ChirpStack Docker package 原本的 `configuration/` folder name，因為 `docker-compose.yml` 預設會讀取這個路徑。
 
 ---
 

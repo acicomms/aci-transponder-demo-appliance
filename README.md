@@ -6,7 +6,7 @@
 
 ---
 
-## 目標用途
+## 用途
 
 這個 appliance 主要用於：
 
@@ -23,7 +23,7 @@
 
 ---
 
-## 目標硬體
+## 硬體
 
 初期目標硬體：
 
@@ -115,6 +115,7 @@ aci-transponder-demo-appliance/
 - Redis
 - Mosquitto MQTT
 - ChirpStack Gateway Bridge
+- ACI NMS
 
 ### `configuration/`
 
@@ -193,6 +194,12 @@ docker compose logs -f
 
 ```text
 http://localhost:8080
+```
+
+開啟 NMS Web UI：
+
+```text
+http://localhost:9080
 ```
 
 停止服務：

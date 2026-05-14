@@ -1,0 +1,6 @@
+# ACI Transponder Demo Appliance Docker Compose
+# This file will include ChirpStack, PostgreSQL, Redis, MQTT, and ACI NMS.
+
+services:
+  placeholder:
+    image: hello-world

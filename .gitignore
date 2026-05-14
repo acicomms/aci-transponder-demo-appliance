@@ -1,0 +1,24 @@
+# Secrets / environment files
+.env
+*.env
+
+# Runtime data
+data/
+backups/
+logs/
+
+# Docker image exports
+*.tar
+*.tar.gz
+*.tgz
+
+# Disk / VM / installer images
+*.img
+*.iso
+*.qcow2
+*.vmdk
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/

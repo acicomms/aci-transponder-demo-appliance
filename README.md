@@ -72,7 +72,7 @@ Ubuntu Server 24.04 LTS
 
 目前此 repository 已可以在 WSL2 / Docker Desktop 測試 ChirpStack Docker baseline。
 
-本地端測試網址：
+ChirpStack本地端測試網址：
 
 ```text
 http://localhost:8080
@@ -80,6 +80,13 @@ http://localhost:8080
 
 若頁面可以開啟 ChirpStack Web UI，代表基本 ChirpStack stack 已正常啟動。
 
+(TBD) ACI NMS本地端測試網址：
+
+```text
+http://localhost:9080
+```
+
+若頁面可以開啟 ACI NMS Web UI，代表基本 ACI NMS 已正常啟動。
 ---
 
 ## Repository 結構

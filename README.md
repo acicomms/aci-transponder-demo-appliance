@@ -229,13 +229,13 @@ docker compose up -d
 /opt/aci-transponder-demo
 ```
 
-高階流程如下：
+流程如下：
 
 ```text
 1. 安裝 Ubuntu Server 24.04 LTS
 2. 安裝 Docker Engine / Docker Compose plugin
 3. 安裝 Tailscale
-4. Clone 此 repository
+4. Clone 這個 repository
 5. 複製 .env.example 為 .env
 6. 更新 .env 裡面的密碼與 appliance 設定
 7. 啟動 Docker Compose services
@@ -336,41 +336,6 @@ docs/release-notes.md
 
 ---
 
-## RD Review 重點
-
-Taiwan RD team 可以從此 repository review：
-
-- Docker Compose 架構
-- ChirpStack / MQTT / NMS service 組成
-- Transponder demo data path
-- 預設 config
-- Field deployment scripts
-- Update / backup 流程
-- 客戶現場 demo package 內容
-
----
-
-## Golden Image 說明
-
-此 repository 不存放完整 SSD image。
-
-Golden image 建議使用 Clonezilla 或其他 disk imaging tool 另行保存，例如：
-
-```text
-SharePoint
-NAS
-External SSD
-Internal backup server
-```
-
-建議命名方式：
-
-```text
-aci-txp-demo-ubuntu24-v1.0-YYYYMMDD
-```
-
----
-
 ## 聯絡窗口
 
 ACI owner:
@@ -379,4 +344,4 @@ ACI owner:
 Jeff Lu
 ```
 
-此 repository 目前作為 ACI Transponder demo appliance 的部署與文件管理基礎。
+這個 repository 目前作為 ACI Transponder demo appliance 的config與文件管理。

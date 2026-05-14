@@ -2,7 +2,7 @@
 
 這個 repository 是用來維護 **ACI Transponder onsite demo appliance** 的安裝設定。
 
-這台 appliance 的目標是提供一個可攜式、可重複部署的本地 demo 環境，讓我們在客戶現場展示 ACI Transponder solution 時，可以提供完整的 ChirpStack、MQTT、資料庫服務，以及 ACI NMS 環境。
+我們在去客戶現場展示 ACI Transponder solution 之前，要確認**ACI Transponder onsite demo appliance**可以提供完整的 ChirpStack、MQTT、資料庫服務，以及 ACI NMS 環境。
 
 ---
 
@@ -65,14 +65,14 @@ Ubuntu Server 24.04 LTS
 
 ## 主要服務
 
-此 appliance 預計包含以下服務：
+這個 appliance 預計包含以下服務：
 
 - ChirpStack
 - PostgreSQL
 - Redis
 - MQTT broker
 - ChirpStack Gateway Bridge
-- ACI NMS
+- ACI NMS - (TBD)
 - Tailscale remote SSH support
 
 ---

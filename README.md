@@ -225,7 +225,7 @@ docker compose up -d
 
 ---
 
-## Appliance 部署位置
+## Appliance installation
 
 正式安裝到 mini PC appliance 時，建議放在：
 

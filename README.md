@@ -12,9 +12,8 @@
 
 - 客戶現場 Transponder demo
 - ACI lab 測試
-- Harmonic / cOS / Sonar integration 前期驗證
 - Transponder telemetry data path 驗證
-- ChirpStack / NMS / MQTT 本地端環境部署
+- ChirpStack / NMS / MQTT 測試
 - Field trial 或短期客戶端測試環境
 
 這個 repository 只存放部署相關的設定檔、script、Docker Compose file，以及文件說明。

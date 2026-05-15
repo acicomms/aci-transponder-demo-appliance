@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACI Map Dashboard</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; flex-direction: column; height: 100vh; background-color: #f0f2f5; color: #333; }
+
+        /* Navbar */
+        .navbar { background-color: #38b298; color: white; height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1000; }
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 22px; }
+        .logo img { height: 35px; }
+        .nav-right { display: flex; align-items: center; gap: 20px; font-size: 14px; }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 32px; height: 32px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #38b298; font-weight: bold; }
+
+        /* App Layout */
+        .app-container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { background-color: #171e2b; color: #a0a5b0; width: 220px; display: flex; flex-direction: column; padding-top: 20px; }
+        .menu-item { padding: 15px 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .menu-item.active { background-color: #232d3f; color: white; border-left: 4px solid #8e44ad; }
+        .menu-item.disabled { cursor: not-allowed; opacity: 0.6; }
+        .content { flex: 1; padding: 20px; display: flex; overflow-y: auto; width: 100%; }
+
+        /* Views */
+        #map-view { display: flex; width: 100%; gap: 20px; }
+        #device-view { display: none; width: 100%; flex-direction: column; gap: 20px; }
+
+        /* Cards & Sections */
+        .map-section { flex: 3; background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .stats-section { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        /* Map UI */
+        .map-header h2 { font-size: 20px; font-weight: 500; margin-bottom: 10px; }
+        .map-legend { font-size: 13px; color: #666; margin-bottom: 15px; }
+        .map-legend span { margin-right: 15px; }
+        #map { flex: 1; border-radius: 4px; border: 1px solid #ddd; }
+        .popup-content { font-size: 13px; line-height: 1.5; }
+        .popup-content h3 { margin: 0 0 5px 0; font-size: 15px; }
+        .green-text { color: #28a745; font-weight: bold; }
+        .grey-text { color: grey; font-weight: bold; }
+        
+        /* Buttons */
+        .btn-view { margin-top: 10px; padding: 6px 12px; background: #38b298; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-view:hover { background: #2c8f7a; }
+        .btn-back { padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* Device View Grid */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 15px; }
+        .stat-box p { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .stat-box h4 { font-size: 20px; color: #333; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo">
+            <img src="https://acicomms.com/wp-content/uploads/2026/01/ACI-logo.svg" alt="ACI Logo">
+            <span>Map</span>
+        </div>
+        <div class="nav-right">
+            <span id="datetime">Loading time...</span>
+            <div class="user-profile">
+                <div class="avatar">JL</div>
+                <span>Jeff Lu<br><small>System Admin</small></span>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="menu-item active" onclick="showMap()">📍 Map</div>
+            <div class="menu-item disabled">🔀 Network</div>
+            <div class="menu-item disabled">📜 Service</div>
+            <div class="menu-item disabled">⚙️ Test</div>
+            <div class="menu-item disabled">📱 Device Settings</div>
+            <div class="menu-item disabled">👤 User Settings</div>
+        </nav>
+
+        <main class="content">
+            
+            <div id="map-view">
+                <section class="map-section">
+                    <div class="map-header">
+                        <h2>device map</h2>
+                        <div class="map-legend">
+                            <span>🟢 green=online</span>
+                            <span>🟡 yellow=warning</span>
+                            <span>🔴 red=offline</span>
+                        </div>
+                    </div>
+                    <div id="map"></div>
+                </section>
+
+                <aside class="stats-section">
+                    <div class="card">
+                        <h3>📡 Gateway</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box"><p>Total</p><h4>1</h4></div>
+                            <div class="stat-box"><p>Online</p><h4 class="green-text">1</h4></div>
+                            <div class="stat-box"><p>Offline</p><h4>0</h4></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>🗼 Device</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box"><p>Total</p><h4 id="stat-total">0</h4></div>
+                            <div class="stat-box"><p>Online</p><h4 id="stat-online" class="green-text">0</h4></div>
+                            <div class="stat-box"><p>Offline</p><h4 id="stat-offline">0</h4></div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <div id="device-view">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Device Analytics Dashboard</h2>
+                    <button class="btn-back" onclick="showMap()">🔙 Back to Map</button>
+                </div>
+                
+                <div style="display: flex; gap: 20px;">
+                    <div class="card" style="flex: 1; text-align: center;">
+                        <img src="https://acicomms.com/wp-content/uploads/elementor/thumbs/SDLE1.8-993-rj8f4wsd0g4dyfzmgf1f29cha6m5rfwxhfsw07c9ai.png" style="max-width: 100%; height: auto; margin-bottom: 15px;">
+                        <h3 id="detail-model">Model Name</h3>
+                        <p style="color: grey; font-size: 14px; margin-top: 10px;">EUI: <span id="detail-eui" style="font-weight: bold; color: #333;"></span></p>
+                        <p style="color: #28a745; font-weight: bold; margin-top: 5px;">Status: Online</p>
+                    </div>
+                    
+                    <div class="card" style="flex: 2;">
+                        <h3>Live Telemetry Feed</h3>
+                        <div class="stats-grid" style="border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
+                            <div class="stat-box"><p>Input Voltage</p><h4 id="detail-voltage">-- V</h4></div>
+                            <div class="stat-box"><p>Internal Temp</p><h4 id="detail-temp">-- °C</h4></div>
+                            <div class="stat-box"><p>RF Output</p><h4 id="detail-rf">-- dBmV</h4></div>
+                        </div>
+                        <div>
+                            <canvas id="telemetryChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Clock
+        setInterval(() => { document.getElementById('datetime').innerText = new Date().toLocaleString(); }, 1000);
+
+        // State Variables
+        let deviceStats = { total: 0, online: 0, offline: 0 };
+        let onlineDeviceEUIs = new Set(); 
+        
+        // Data History for Charts (Stores the last 15 readings per device)
+        const deviceHistory = {}; 
+        let currentViewEUI = null;
+        let chartInstance = null;
+
+        function updateDeviceStatsUI() {
+            document.getElementById('stat-total').innerText = deviceStats.total;
+            document.getElementById('stat-online').innerText = deviceStats.online;
+            document.getElementById('stat-offline').innerText = deviceStats.offline;
+        }
+
+        // Initialize Map
+        var map = L.map('map').setView([47.5, -122.2], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        var markers = {}; 
+
+        var offlineIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
+        var onlineIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
+
+        fetch('/api/devices')
+            .then(response => response.json())
+            .then(devices => {
+                deviceStats.total = devices.length;
+                deviceStats.offline = devices.length;
+                updateDeviceStatsUI();
+
+                devices.forEach(device => {
+                    var popupHTML = `
+                        <div class="popup-content">
+                            <h3>${device.model_name}</h3>
+                            <p><strong>EUI:</strong> ${device.eui}</p>
+                            <p><strong>Status:</strong> <span class="grey-text">Offline</span></p>
+                        </div>
+                    `;
+                    var marker = L.marker([device.lat, device.lng], {icon: offlineIcon}).addTo(map);
+                    marker.bindPopup(popupHTML);
+                    markers[device.eui] = marker;
+                });
+            });
+
+        // ----------------------------------------------------
+        // NAVIGATION LOGIC (Switching between Map and Stats)
+        // ----------------------------------------------------
+        function showMap() {
+            currentViewEUI = null;
+            document.getElementById('device-view').style.display = 'none';
+            document.getElementById('map-view').style.display = 'flex';
+        }
+
+        // Must attach to window object so inline HTML onclick can find it
+        window.openDevicePage = function(eui, model, voltage, temp, rf) {
+            currentViewEUI = eui;
+            document.getElementById('map-view').style.display = 'none';
+            document.getElementById('device-view').style.display = 'flex';
+            
+            // Populate Static Text
+            document.getElementById('detail-model').innerText = model;
+            document.getElementById('detail-eui').innerText = eui;
+            document.getElementById('detail-voltage').innerText = voltage + " V";
+            document.getElementById('detail-temp').innerText = temp + " °C";
+            document.getElementById('detail-rf').innerText = rf + " dBmV";
+
+            // Draw Chart
+            renderChart(eui);
+        };
+
+        function renderChart(eui) {
+            const ctx = document.getElementById('telemetryChart').getContext('2d');
+            
+            // Destroy old chart if viewing a new device
+            if (chartInstance) { chartInstance.destroy(); }
+
+            // Get data or create empty arrays if device just booted
+            const history = deviceHistory[eui] || { time: [], voltage: [], temp: [], rf: [] };
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: history.time,
+                    datasets: [
+                        { label: 'Voltage (V)', data: history.voltage, borderColor: '#3498db', tension: 0.3 },
+                        { label: 'Temp (°C)', data: history.temp, borderColor: '#e74c3c', tension: 0.3 },
+                        { label: 'RF Power (dBmV)', data: history.rf, borderColor: '#2ecc71', tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, animation: { duration: 400 } }
+            });
+        }
+
+        // ----------------------------------------------------
+        // REAL-TIME SOCKET LOGIC
+        // ----------------------------------------------------
+        var socket = io();
+        socket.on('telemetry_update', function(data) {
+            
+            // 1. Update Map Stats
+            if (!onlineDeviceEUIs.has(data.eui)) {
+                onlineDeviceEUIs.add(data.eui);
+                deviceStats.online++;
+                deviceStats.offline--;
+                updateDeviceStatsUI();
+            }
+
+            // 2. Save Data History for the Chart
+            if (!deviceHistory[data.eui]) {
+                deviceHistory[data.eui] = { time: [], voltage: [], temp: [], rf: [] };
+            }
+            const timeNow = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            deviceHistory[data.eui].time.push(timeNow);
+            deviceHistory[data.eui].voltage.push(data.voltage);
+            deviceHistory[data.eui].temp.push(data.temp);
+            deviceHistory[data.eui].rf.push(data.rf);
+
+            // Keep array size manageable (last 15 readings)
+            if (deviceHistory[data.eui].time.length > 15) {
+                deviceHistory[data.eui].time.shift();
+                deviceHistory[data.eui].voltage.shift();
+                deviceHistory[data.eui].temp.shift();
+                deviceHistory[data.eui].rf.shift();
+            }
+
+            // 3. Update the Map Marker Popup with the New Button
+            var popupHTML = `
+                <div class="popup-content">
+                    <h3>${data.model}</h3>
+                    <p><strong>EUI:</strong> ${data.eui}</p>
+                    <p><strong>Status:</strong> <span class="green-text">Online</span></p>
+                    <hr>
+                    <p><strong>Input Voltage:</strong> ${data.voltage} V</p>
+                    <p><strong>Internal Temp:</strong> ${data.temp} °C</p>
+                    <p><strong>RF Output:</strong> ${data.rf} dBmV</p>
+                    <button class="btn-view" onclick="window.openDevicePage('${data.eui}', '${data.model}', '${data.voltage}', '${data.temp}', '${data.rf}')">View Live Statistics</button>
+                </div>
+            `;
+
+            if (markers[data.eui]) {
+                markers[data.eui].setIcon(onlineIcon);
+                markers[data.eui].setPopupContent(popupHTML);
+            }
+
+            // 4. LIVE UPDATE: If the user is currently looking at this exact device's stat page, update the numbers and chart immediately!
+            if (currentViewEUI === data.eui) {
+                document.getElementById('detail-voltage').innerText = data.voltage + " V";
+                document.getElementById('detail-temp').innerText = data.temp + " °C";
+                document.getElementById('detail-rf').innerText = data.rf + " dBmV";
+                if (chartInstance) { chartInstance.update(); }
+            }
+        });
+    </script>
+</body>
+</html>

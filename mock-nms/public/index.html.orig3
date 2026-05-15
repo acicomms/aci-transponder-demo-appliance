@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACI Map Dashboard</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; flex-direction: column; height: 100vh; background-color: #f0f2f5; color: #333; }
+
+        /* Navbar */
+        .navbar { background-color: #38b298; color: white; height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1000; }
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 22px; }
+        .logo img { height: 35px; }
+        .nav-right { display: flex; align-items: center; gap: 20px; font-size: 14px; }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 32px; height: 32px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #38b298; font-weight: bold; }
+
+        /* Layout */
+        .app-container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { background-color: #171e2b; color: #a0a5b0; width: 220px; display: flex; flex-direction: column; padding-top: 20px; }
+        .menu-item { padding: 15px 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .menu-item.active { background-color: #232d3f; color: white; border-left: 4px solid #38b298; }
+        .menu-item.disabled { cursor: not-allowed; opacity: 0.6; }
+        .content { flex: 1; padding: 20px; display: flex; overflow-y: auto; width: 100%; }
+
+        /* View Toggles */
+        #map-view { display: flex; width: 100%; gap: 20px; }
+        #device-view { display: none; width: 100%; flex-direction: column; gap: 20px; }
+
+        /* Map & Cards */
+        .map-section { flex: 3; background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .stats-section { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        .map-header h2 { font-size: 20px; font-weight: 500; margin-bottom: 10px; }
+        .map-legend { font-size: 13px; color: #666; margin-bottom: 15px; }
+        .map-legend span { margin-right: 15px; }
+        #map { flex: 1; border-radius: 4px; border: 1px solid #ddd; }
+        
+        /* Popups */
+        .popup-content { font-size: 13px; line-height: 1.5; }
+        .popup-content h3 { margin: 0 0 5px 0; font-size: 15px; }
+        .btn-view { margin-top: 10px; padding: 6px 12px; background: #38b298; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-back { padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; }
+        .stat-box p { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .stat-box h4 { font-size: 20px; color: #333; }
+        .green-text { color: #28a745; font-weight: bold; }
+
+        /* Telemetry Table */
+        .telemetry-table-container { overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+        th { background-color: #38b298; color: white; padding: 12px 10px; font-weight: 600; }
+        td { padding: 10px; border-bottom: 1px solid #eee; color: #444; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .alarm-row { background-color: #ffeaea !important; }
+        .alarm-badge { background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 4px;}
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo">
+            <img src="https://acicomms.com/wp-content/uploads/2026/01/ACI-logo.svg" alt="ACI Logo">
+            <span>Map</span>
+        </div>
+        <div class="nav-right">
+            <span id="datetime">Loading time...</span>
+            <div class="user-profile">
+                <div class="avatar">JL</div>
+                <span>Jeff Lu<br><small>System Admin</small></span>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="menu-item active" onclick="showMap()">📍 Map</div>
+            <div class="menu-item disabled">🔀 Network</div>
+            <div class="menu-item disabled">📜 Service</div>
+            <div class="menu-item disabled">⚙️ Test</div>
+            <div class="menu-item disabled">📱 Device Settings</div>
+            <div class="menu-item disabled">👤 User Settings</div>
+        </nav>
+
+        <main class="content">
+            
+            <div id="map-view">
+                <section class="map-section">
+                    <div class="map-header">
+                        <h2>device map</h2>
+                        <div class="map-legend"><span>🟢 online</span><span>🟡 warning</span><span>⚪ offline</span></div>
+                    </div>
+                    <div id="map"></div>
+                </section>
+                <aside class="stats-section">
+                    <div class="card">
+                        <h3>📡 Gateway</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box"><p>Total</p><h4>1</h4></div>
+                            <div class="stat-box"><p>Online</p><h4 class="green-text">1</h4></div>
+                            <div class="stat-box"><p>Offline</p><h4>0</h4></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>🗼 Device</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box"><p>Total</p><h4 id="stat-total">0</h4></div>
+                            <div class="stat-box"><p>Online</p><h4 id="stat-online" class="green-text">0</h4></div>
+                            <div class="stat-box"><p>Offline</p><h4 id="stat-offline">0</h4></div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <div id="device-view">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Device Analytics: <span id="detail-model" style="color: #38b298;"></span></h2>
+                    <button class="btn-back" onclick="showMap()">🔙 Back to Map</button>
+                </div>
+                
+                <div style="display: flex; gap: 20px;">
+                    <div class="card" style="flex: 1; text-align: center;">
+                        <img src="https://acicomms.com/wp-content/uploads/elementor/thumbs/SDLE1.8-993-rj8f4wsd0g4dyfzmgf1f29cha6m5rfwxhfsw07c9ai.png" style="max-width: 100%; height: auto; margin-bottom: 15px;">
+                        <p style="color: grey; font-size: 14px;">EUI: <span id="detail-eui" style="font-weight: bold; color: #333;"></span></p>
+                        <p style="color: #28a745; font-weight: bold; margin-top: 5px;">Status: Online</p>
+                    </div>
+                    <div class="card" style="flex: 3;">
+                        <h3 style="margin-bottom: 15px; color: #38b298;">Live Telemetry Log</h3>
+                        <div class="telemetry-table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>AC Volt</th>
+                                        <th>24V</th>
+                                        <th>8V</th>
+                                        <th>5.5V</th>
+                                        <th>3.3V</th>
+                                        <th>Temp °C</th>
+                                        <th>DS Attn</th>
+                                        <th>DS EQ</th>
+                                        <th>US Attn</th>
+                                        <th>US EQ</th>
+                                        <th>Alarms</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="telemetry-body">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Clock
+        setInterval(() => { document.getElementById('datetime').innerText = new Date().toLocaleString(); }, 1000);
+
+        // State Trackers
+        let deviceStats = { total: 0, online: 0, offline: 0 };
+        let onlineDeviceEUIs = new Set(); 
+        let currentViewEUI = null;
+        const deviceDataHistory = {}; 
+
+        function updateDeviceStatsUI() {
+            document.getElementById('stat-total').innerText = deviceStats.total;
+            document.getElementById('stat-online').innerText = deviceStats.online;
+            document.getElementById('stat-offline').innerText = deviceStats.offline;
+        }
+
+        // Initialize Map
+        var map = L.map('map').setView([47.5, -122.2], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        var markers = {}; 
+
+        // Map Icons
+        var offlineIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
+        var onlineIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
+        var warningIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] }); 
+
+        // Initial DB Fetch
+        fetch('/api/devices').then(res => res.json()).then(devices => {
+            deviceStats.total = devices.length;
+            deviceStats.offline = devices.length;
+            updateDeviceStatsUI();
+
+            devices.forEach(device => {
+                var popupHTML = `<div class="popup-content"><h3>${device.model_name}</h3><p><strong>EUI:</strong> ${device.eui}</p><p><strong>Status:</strong> <span style="color: grey;">Offline</span></p></div>`;
+                var marker = L.marker([device.lat, device.lng], {icon: offlineIcon}).addTo(map);
+                marker.bindPopup(popupHTML);
+                markers[device.eui] = marker;
+            });
+        }).catch(err => console.error("Error fetching devices:", err));
+
+        // Navigation Functions
+        function showMap() {
+            currentViewEUI = null;
+            document.getElementById('device-view').style.display = 'none';
+            document.getElementById('map-view').style.display = 'flex';
+        }
+
+        window.openDevicePage = function(eui, model) {
+            currentViewEUI = eui;
+            document.getElementById('map-view').style.display = 'none';
+            document.getElementById('device-view').style.display = 'flex';
+            document.getElementById('detail-model').innerText = model;
+            document.getElementById('detail-eui').innerText = eui;
+
+            document.getElementById('telemetry-body').innerHTML = deviceDataHistory[eui] ? deviceDataHistory[eui].join('') : '';
+        };
+
+        // Live Socket Connection
+        var socket = io();
+        socket.on('telemetry_update', function(data) {
+            
+            if (!onlineDeviceEUIs.has(data.eui)) {
+                onlineDeviceEUIs.add(data.eui);
+                deviceStats.online++;
+                deviceStats.offline--;
+                updateDeviceStatsUI();
+            }
+
+            const tel = data.telemetry;
+            
+            // Evaluated Alarms
+            const isTempAlarm = tel.temperature_c > 40 || tel.alarms.temp_critical;
+            const isPowerAlarm = tel.ac_voltage > 80 || tel.ac_voltage < 40 || tel.alarms.power_anomaly;
+            const isLidAlarm = tel.alarms.lid_open;
+
+            const hasAlarm = isTempAlarm || isPowerAlarm || isLidAlarm;
+            
+            let alarmBadges = '';
+            if (isLidAlarm) alarmBadges += '<span class="alarm-badge">Lid Open</span>';
+            if (isPowerAlarm) alarmBadges += '<span class="alarm-badge">Power</span>';
+            if (isTempAlarm) alarmBadges += '<span class="alarm-badge">Temp</span>';
+            if (!hasAlarm) alarmBadges = '<span style="color: #28a745; font-weight: bold;">OK</span>';
+
+            const timeNow = new Date().toLocaleTimeString();
+            const rowColorClass = hasAlarm ? 'alarm-row' : '';
+            
+            const newRow = `
+                <tr class="${rowColorClass}">
+                    <td>${timeNow}</td>
+                    <td style="color: ${isPowerAlarm ? '#dc3545' : '#28a745'}; font-weight: bold;">${tel.ac_voltage}</td>
+                    <td>${Number(tel.rail_24v).toFixed(2)}</td>
+                    <td>${Number(tel.rail_8v).toFixed(2)}</td>
+                    <td>${Number(tel.rail_5_5v).toFixed(2)}</td>
+                    <td>${Number(tel.rail_3_3v).toFixed(2)}</td>
+                    <td style="color: ${isTempAlarm ? '#dc3545' : '#28a745'}; font-weight: bold;">${tel.temperature_c}</td>
+                    <td>${tel.ds_attn}</td>
+                    <td>${tel.ds_eq}</td>
+                    <td>${tel.us_attn}</td>
+                    <td>${tel.us_eq}</td>
+                    <td>${alarmBadges}</td>
+                </tr>
+            `;
+
+            if (!deviceDataHistory[data.eui]) deviceDataHistory[data.eui] = [];
+            deviceDataHistory[data.eui].unshift(newRow); 
+            if (deviceDataHistory[data.eui].length > 10) deviceDataHistory[data.eui].pop();
+
+            // Push to UI if currently viewing this device
+            if (currentViewEUI === data.eui) {
+                document.getElementById('telemetry-body').innerHTML = deviceDataHistory[data.eui].join('');
+            }
+
+            // Update Map Popup
+            var popupHTML = `
+                <div class="popup-content">
+                    <h3>${data.model}</h3>
+                    <p><strong>EUI:</strong> ${data.eui}</p>
+                    <p><strong>Status:</strong> <span style="color: ${hasAlarm ? '#dc3545' : '#28a745'}; font-weight: bold;">${hasAlarm ? 'ALARM' : 'Online'}</span></p>
+                    <hr>
+                    <p><strong>AC Volt:</strong> ${tel.ac_voltage} V</p>
+                    <p><strong>Temp:</strong> ${tel.temperature_c} °C</p>
+                    <button class="btn-view" onclick="window.openDevicePage('${data.eui}', '${data.model}')">View Detailed Telemetry</button>
+                </div>
+            `;
+
+            if (markers[data.eui]) {
+                markers[data.eui].setIcon(hasAlarm ? warningIcon : onlineIcon);
+                markers[data.eui].setPopupContent(popupHTML);
+            }
+        });
+    </script>
+</body>
+</html>

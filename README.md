@@ -235,16 +235,145 @@ docker compose up -d
 流程如下：
 
 ```text
-1. 安裝 Ubuntu Server 24.04 LTS
+1. 安裝 Ubuntu Server 24.04 LTS https://ubuntu.com/download/server?utm_source=chatgpt.com 
 2. 安裝 Docker Engine / Docker Compose plugin
+2.1 Basic Ubuntu preparation
+```
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+```text
+Then reboot
+```
+sudo reboot
+```
+```text
+Install prerequsite packages
+```
+```bash
+sudo apt install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    git
+```
+```text
+Add Docker GPG key
+```
+```bash
+sudo mkdir -p /etc/apt/keyrings
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+```
+```text
+Add Docker repository
+```
+```bash
+echo \
+  "deb [arch=$(dpkg --print-architecture) \
+  signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  noble stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+```text
+Install Docker Engine + Compose plugin
+```
+```bash
+sudo apt update
+
+sudo apt install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
+```
+```text
+Verify Docker install
+```
+```bash
+docker --version
+docker compose version
+```
+```text
+Add yourself do docker group
+```
+```bash
+sudo usermod -aG docker $USER
+```
+```text
+Verify Docker without doing sudo
+```
+```bash
+docker ps
+```
+```text
 3. 安裝 Tailscale
+```
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+```text
+It will give you a URL.
+Open the URL from your laptop browser and authorize the appliance.
+
+Verify Tailscale
+```
+```bash
+tailscale status
+```
+```text
 4. Clone 這個 repository
-5. 複製 .env.example 為 .env
-6. 更新 .env 裡面的密碼與 appliance 設定
-7. 啟動 Docker Compose services
-8. 測試 ChirpStack / MQTT / NMS
-9. 確認 reboot 後服務可自動恢復
-10. 建立 golden image
+```
+```bash
+sudo mkdir -p /opt/aci-transponder-demo
+sudo chown $USER:$USER /opt/aci-transponder-demo
+
+cd /opt/aci-transponder-demo
+
+git clone https://github.com/acicomms/aci-transponder-demo-appliance.git .
+```
+```text
+5. 複製 .env.example 為 .env, 更新 .env 裡面的密碼與 appliance 設定
+```
+```bash
+cp .env.example .env
+nano .env
+```
+```text
+6. 啟動 Docker Compose services
+```
+```bash
+docker compose pull
+docker compose up -d
+```
+```text
+7. 測試 ChirpStack / MQTT / NMS
+```
+```bash
+ss -ltunp
+```
+```text
+You want:
+  TCP 8080
+  TCP 3000
+  TCP 1883
+  UDP 1700
+
+From your laptop browser:
+    http://<dell-ip>:8080
+    http://<dell-ip>:3000
+8. 確認 reboot 後服務可自動恢復
+```
+```bash
+sudo reboot
+```
+9. 建立 golden image
 ```
 
 ---

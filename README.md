@@ -41,12 +41,14 @@ Download:
 
 https://ubuntu.com/download/server
 
+Check https://ubuntu.com/download/server#how-to-install-tab-lts to create a bootable USB flash drive, and use that to install Ubuntu
+
 Install:
 
 ```text
 Ubuntu Server 24.04 LTS
 ```
-Check https://ubuntu.com/download/server#how-to-install-tab-lts to create a bootable USB flash drive, and use that to install Ubuntu
+
 ---
 
 ## Step 2 — Install Docker Engine

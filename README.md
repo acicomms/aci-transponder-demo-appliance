@@ -6,7 +6,7 @@ ACI Transponder onsite demo appliance deployment repository.
 
 # Overview
 
-這個 repository 用來維護：
+This repository stores the info for:
 
 - ACI Transponder onsite demo appliance
 - ChirpStack deployment
@@ -15,157 +15,13 @@ ACI Transponder onsite demo appliance deployment repository.
 - ACI NMS environment
 - Demo/testing environment setup
 
-此 appliance 主要提供：
+The appliance will be used at：
 
 - Customer onsite demo
 - ACI lab validation
 - Transponder telemetry data path verification
 - ChirpStack / MQTT / NMS integration
 - Field trial environments
-
----
-
-# Features
-
-- ChirpStack
-- PostgreSQL
-- Redis
-- MQTT Broker
-- ChirpStack Gateway Bridge
-- ACI NMS
-- Tailscale remote support
-- Docker Compose deployment
-- Ubuntu Server 24.04 LTS baseline
-
----
-
-# Hardware Requirements
-
-## Recommended Mini PC
-
-- Dell OptiPlex 7060 Micro
-- Intel Core i5-8500T
-- 16GB RAM
-- 256GB SSD or above
-
-## Other Supported Platforms
-
-- HP ProDesk Mini
-- Dell OptiPlex Micro
-- Lenovo ThinkCentre Tiny
-- Intel NUC
-
----
-
-# Operating System
-
-Recommended:
-
-```text
-Ubuntu Server 24.04 LTS
-```
-
-Not recommended:
-
-```text
-Windows + WSL2 production appliance deployment
-```
-
----
-
-# Repository Structure
-
-```text
-aci-transponder-demo-appliance/
-├── README.md
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-├── install.sh
-├── configuration/
-│   ├── chirpstack/
-│   ├── chirpstack-gateway-bridge/
-│   ├── mosquitto/
-│   └── postgresql/
-├── docs/
-├── examples/
-└── scripts/
-    ├── status.sh
-    ├── update.sh
-    └── backup.sh
-```
-
----
-
-# Services Included
-
-| Service | Purpose |
-|---|---|
-| ChirpStack | LoRaWAN Network Server |
-| PostgreSQL | Database |
-| Redis | Cache / Queue |
-| Mosquitto MQTT | MQTT Broker |
-| ChirpStack Gateway Bridge | Gateway Integration |
-| ACI NMS | Network Management |
-| Tailscale | Remote Support |
-
----
-
-# Current Test Status
-
-Currently validated under:
-
-- Windows 11
-- WSL2
-- Docker Desktop
-- Ubuntu Server 24.04 LTS
-
-ChirpStack local test URL:
-
-```text
-http://localhost:8080
-```
-
-(TBD) ACI NMS local test URL:
-
-```text
-http://localhost:3000
-```
-
----
-
-# Local WSL2 Testing
-
-## Start Services
-
-```bash
-docker compose up -d
-```
-
-## Check Status
-
-```bash
-docker compose ps
-```
-
-## View Logs
-
-```bash
-docker compose logs -f
-```
-
-## Stop Services
-
-```bash
-docker compose down
-```
-
-## Full Reset
-
-```bash
-docker compose down -v
-docker compose up -d
-```
 
 ---
 
@@ -190,7 +46,7 @@ Install:
 ```text
 Ubuntu Server 24.04 LTS
 ```
-
+Check https://ubuntu.com/download/server#how-to-install-tab-lts to create a bootable USB flash drive, and use that to install Ubuntu
 ---
 
 ## Step 2 — Install Docker Engine
@@ -323,6 +179,9 @@ cd /opt/aci-transponder-demo
 git clone https://github.com/acicomms/aci-transponder-demo-appliance.git .
 ```
 
+You will be asked to enter username and password for pull the files from this private repo.
+Please be sure to get the token from the maintainer to be used as the password.
+
 ---
 
 ## Step 5 — Configure Environment Variables
@@ -390,13 +249,75 @@ docker compose ps
 
 ---
 
-## Step 9 — Create Golden Image
+# Hardware Requirements
 
-Recommended tools:
+## Recommended Mini PC
 
-- Clonezilla
-- Macrium Reflect
-- Enterprise imaging solutions
+- Dell OptiPlex 7060 Micro
+- Intel Core i5-8500T
+- 16GB RAM
+- 256GB SSD or above
+
+## Other Supported Platforms
+
+- HP ProDesk Mini
+- Dell OptiPlex Micro
+- Lenovo ThinkCentre Tiny
+- Intel NUC
+
+---
+
+# Operating System
+
+Recommended:
+
+```text
+Ubuntu Server 24.04 LTS
+```
+
+Not recommended:
+
+```text
+Windows + WSL2 production appliance deployment
+```
+
+---
+
+# Repository Structure
+
+```text
+aci-transponder-demo-appliance/
+├── README.md
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+├── install.sh
+├── configuration/
+│   ├── chirpstack/
+│   ├── chirpstack-gateway-bridge/
+│   ├── mosquitto/
+│   └── postgresql/
+├── docs/
+├── examples/
+└── scripts/
+    ├── status.sh
+    ├── update.sh
+    └── backup.sh
+```
+
+---
+
+# Services Included
+
+| Service | Purpose |
+|---|---|
+| ChirpStack | LoRaWAN Network Server |
+| PostgreSQL | Database |
+| Redis | Cache / Queue |
+| Mosquitto MQTT | MQTT Broker |
+| ChirpStack Gateway Bridge | Gateway Integration |
+| ACI NMS | Network Management |
+| Tailscale | Remote Support |
 
 ---
 
@@ -468,7 +389,6 @@ DO NOT commit:
 - Tailscale auth keys
 - API keys
 - Docker image tar files
-- Clonezilla images
 - PostgreSQL backups
 - Customer production data
 - Production private configurations
@@ -540,45 +460,9 @@ docs/release-notes.md
 
 ---
 
-# Future Improvements
-
-Planned future enhancements:
-
-- Automated installation scripts
-- Backup automation
-- OTA update support
-- Multi-region LoRaWAN support
-- Monitoring dashboards
-- Customer-specific deployment profiles
-- Kubernetes deployment exploration
-- Offline demo mode support
-
----
-
 # Maintainer
 
 ```text
 Jeff Lu
 ACI Communications
 ```
-
----
-
-# Important Notes
-
-This repository stores:
-
-- Deployment configurations
-- Docker Compose files
-- Scripts
-- Documentation
-
-This repository should NOT store:
-
-- Production secrets
-- Customer credentials
-- Large backup files
-- Docker image archives
-- Customer production data
-
----

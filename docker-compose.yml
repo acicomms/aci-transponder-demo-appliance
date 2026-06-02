@@ -1,8 +1,8 @@
 services:
   chirpstack:
     image: chirpstack/chirpstack:4
-    command: -c /etc/chirpstack
     restart: unless-stopped
+    command: -c /etc/chirpstack
     volumes:
       - ./configuration/chirpstack:/etc/chirpstack
     depends_on:
@@ -23,37 +23,12 @@ services:
       - "1700:1700/udp"
     volumes:
       - ./configuration/chirpstack-gateway-bridge:/etc/chirpstack-gateway-bridge
+    depends_on:
+      - mosquitto
     environment:
       - INTEGRATION__MQTT__EVENT_TOPIC_TEMPLATE=us915_0/gateway/{{ .GatewayID }}/event/{{ .EventType }}
       - INTEGRATION__MQTT__STATE_TOPIC_TEMPLATE=us915_0/gateway/{{ .GatewayID }}/state/{{ .StateType }}
       - INTEGRATION__MQTT__COMMAND_TOPIC_TEMPLATE=us915_0/gateway/{{ .GatewayID }}/command/#
-    depends_on:
-      - mosquitto
-  
-  # chirpstack-gateway-bridge-basicstation:
-  #   image: chirpstack/chirpstack-gateway-bridge:4
-  #   restart: unless-stopped
-  #   command: -c /etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge-basicstation-us915.toml
-  #   ports:
-  #     - "3001:3001"
-  #   volumes:
-  #     - ./configuration/chirpstack-gateway-bridge:/etc/chirpstack-gateway-bridge
-  #   depends_on:
-  #     - mosquitto
-
-  aci-nms-mock:
-  #   image: ghcr.io/jefflu-aci/aci-transponder-nms:latest
-  #   container_name: aci-transponder-nms
-      build: ./mock-nms
-      restart: unless-stopped
-      ports:
-       - "3000:3000"
-      environment:
-       - MQTT_URL=mqtt://mosquitto:1883
-       - PORT=3000
-      depends_on:
-        - mosquitto
-        - chirpstack
 
   chirpstack-rest-api:
     image: chirpstack/chirpstack-rest-api:4
@@ -68,12 +43,10 @@ services:
     image: postgres:14-alpine
     restart: unless-stopped
     volumes:
-      - ./configuration/postgresql/initdb:/docker-entrypoint-initdb.d
       - postgresqldata:/var/lib/postgresql/data
+      - ./configuration/postgresql/initdb:/docker-entrypoint-initdb.d
     environment:
-      - POSTGRES_USER=chirpstack
-      - POSTGRES_PASSWORD=chirpstack
-      - POSTGRES_DB=chirpstack
+      - POSTGRES_PASSWORD=root
 
   redis:
     image: redis:7-alpine
@@ -87,9 +60,66 @@ services:
     restart: unless-stopped
     ports:
       - "1883:1883"
-    volumes: 
+    volumes:
       - ./configuration/mosquitto/config/:/mosquitto/config/
+
+  twoway-nms-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      TZ: America/Los_Angeles
+      MYSQL_ROOT_PASSWORD: ${NMS_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${NMS_MYSQL_DATABASE}
+      MYSQL_USER: ${NMS_MYSQL_USER}
+      MYSQL_PASSWORD: ${NMS_MYSQL_PASSWORD}
+    volumes:
+      - twoway-nms-mysql-data:/var/lib/mysql
+
+  twoway-nms-backend:
+    build:
+      context: ./twoway-nms/NMSbackend
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    ports:
+      - "9090:8080"
+    depends_on:
+      - twoway-nms-db
+      - mosquitto
+      - chirpstack
+    environment:
+      TZ: America/Los_Angeles
+      DB_HOST: twoway-nms-db
+      DB_PORT: 3306
+      DB_USER: ${NMS_MYSQL_USER}
+      DB_PASSWORD: ${NMS_MYSQL_PASSWORD}
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      CHIRPSTACK_HOST: chirpstack
+      CHIRPSTACK_PORT: "8080"
+      CHIRPSTACK_API_KEY: ${CHIRPSTACK_API_KEY}
+      CHIRPSTACK_API_TOKEN: ${CHIRPSTACK_API_TOKEN}
+      CHIRPSTACK_TENANT_ID: ${CHIRPSTACK_TENANT_ID}
+      LINE: ""
+      LINE_SECRET: ""
+      LINE_CALLBACK_URL: "http://localhost:9080/callback"
+      GOOGLE: ""
+      GOOGLE_SECRET: ""
+      FACEBOOK: ""
+      FACEBOOK_SECRET: ""
+      FACEBOOK_REDIRECT_URI: "http://localhost:9080/auth/facebook/callback"
+
+  twoway-nms-frontend:
+    build:
+      context: ./twoway-nms/NMSfrontend
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    ports:
+      - "9080:80"
+    depends_on:
+      - twoway-nms-backend
+    environment:
+      TZ: America/Los_Angeles
 
 volumes:
   postgresqldata:
   redisdata:
+  twoway-nms-mysql-data:

@@ -1,0 +1,97 @@
+services:
+  backend:
+    build:
+      context: ./NMSbackend
+      dockerfile: Dockerfile.src.backend
+    image: nms-backend:latest
+    container_name: nms-backend
+    restart: always
+    ports:
+      - "9090:8080"
+    depends_on:
+      - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      TZ: Asia/Taipei
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: auth_user
+      DB_PASSWORD: auth_password
+
+      # use name
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      CHIRPSTACK_HOST: chirpstack
+      CHIRPSTACK_PORT: "8080"
+
+      # 10.239.35.100
+      # CHIRPSTACK_API_KEY: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjaGlycHN0YWNrIiwiaXNzIjoiY2hpcnBzdGFjayIsInN1YiI6IjY4ZjQ4NDQ2LTQ1OGEtNGE4OS05ODRkLWE2ZTBhMTRlOGNhYyIsInR5cCI6ImtleSJ9.PQ4xWVi7ITISgc-D04hL_MjiQgNKUB6QUJ2BsFI4Flw"
+      # CHIRPSTACK_API_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjaGlycHN0YWNrIiwiaXNzIjoiY2hpcnBzdGFjayIsInN1YiI6IjY4ZjQ4NDQ2LTQ1OGEtNGE4OS05ODRkLWE2ZTBhMTRlOGNhYyIsInR5cCI6ImtleSJ9.PQ4xWVi7ITISgc-D04hL_MjiQgNKUB6QUJ2BsFI4Flw"
+      # CHIRPSTACK_TENANT_ID: "675eeeb1-111d-4616-9b60-2f4431deac50"
+
+      # 10.239.35.60
+      CHIRPSTACK_API_KEY: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjaGlycHN0YWNrIiwiaXNzIjoiY2hpcnBzdGFjayIsInN1YiI6Ijg4NDQzYjZlLWVhYTUtNGZhYS1iYmZmLWJmMDljMzU3NjVmMiIsInR5cCI6ImtleSJ9.M-tEmNACagZ4Ztc0v_xNyo5jbmw-b83Z6uGGM_aePUs"
+      CHIRPSTACK_API_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjaGlycHN0YWNrIiwiaXNzIjoiY2hpcnBzdGFjayIsInN1YiI6Ijg4NDQzYjZlLWVhYTUtNGZhYS1iYmZmLWJmMDljMzU3NjVmMiIsInR5cCI6ImtleSJ9.M-tEmNACagZ4Ztc0v_xNyo5jbmw-b83Z6uGGM_aePUs"
+      CHIRPSTACK_TENANT_ID: "f60590a7-f0ce-4a20-81f4-cb01aeb48622"
+
+
+      LINE: ""
+      LINE_SECRET: ""
+      LINE_CALLBACK_URL: "http://localhost:9080/callback"
+      GOOGLE: ""
+      GOOGLE_SECRET: ""
+      FACEBOOK: ""
+      FACEBOOK_SECRET: ""
+      FACEBOOK_REDIRECT_URI: "http://localhost:9080/auth/facebook/callback"
+    networks:
+      - nms-network
+      - demo-net
+
+  db:
+    image: mysql:8.0
+    container_name: nms-db
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      TZ: Asia/Taipei
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: auth_user
+      MYSQL_PASSWORD: auth_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - nms-network
+
+  frontend:
+    build:
+      context: ./NMSfrontend
+      dockerfile: Dockerfile.src.frontend
+    image: nms-frontend:latest
+    container_name: nms-frontend
+    restart: unless-stopped
+    ports:
+      - "9080:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - TZ=Asia/Taipei
+    depends_on:
+      - backend
+    networks:
+      - nms-network
+
+networks:
+  nms-network:
+    driver: bridge
+  demo-net:               # add
+    # name: demo_lora-net   # chirpstack network
+    name: chirpstack-docker_lora-net
+    external: true
+
+volumes:
+  mysql-data:
+
+# 10.239.35.60 tenant_02
+# eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjaGlycHN0YWNrIiwiaXNzIjoiY2hpcnBzdGFjayIsInN1YiI6Ijg4NDQzYjZlLWVhYTUtNGZhYS1iYmZmLWJmMDljMzU3NjVmMiIsInR5cCI6ImtleSJ9.M-tEmNACagZ4Ztc0v_xNyo5jbmw-b83Z6uGGM_aePUs

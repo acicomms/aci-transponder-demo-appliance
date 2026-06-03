@@ -1,0 +1,5 @@
+# prebuilt .jar, /dist are needed
+docker compose down && sleep 3 && docker compose up -d --build
+
+# if from source
+docker compose -f docker-compose-src.yml down && sleep 3 && docker compose -f docker-compose-src.yml up -d --build

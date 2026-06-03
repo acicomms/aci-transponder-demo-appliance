@@ -176,55 +176,79 @@ public class DevicePayloadDecoder {
              * 01 或 02：代表它是回覆哪一個指令（01 = 基本資訊，02 = 設定參數）
              * 第三個 Byte 6F：是長度或校驗碼
              */
-            int headerByte = dec[0] & 0xFF;
+            // ==========================================
+            // 改用 envelope byte5 的 commandId
+            // 原 Cray 版本 看 dec[0] 內容, 可能不可靠
+            // ==========================================
             byte[] actualData = dec;
-            int packetType = -1;
-
-            // 判斷是否為帶有 B1 表頭的新版硬體格式
-            if (headerByte == 0xB1 && dec.length > 3) {
-                int cmdType = dec[1] & 0xFF;
-
-                // 切掉前面的3 Bytes表頭 還原真實的 176 Bytes資料
+            if ((dec[0] & 0xFF) == 0xB1 && dec.length > 3) {
                 actualData = java.util.Arrays.copyOfRange(dec, 3, dec.length);
-
-                if (cmdType == 0x01) {
-                    packetType = 1; // 40010101 
-                } else if (cmdType == 0x02) {
-                    packetType = 2; // 40010102 
-                }
-            }
-            // 判斷是否為舊版無表頭格式或Status Data
-            /*
-             * 第一個 Byte 直接是機器的狀態碼（例如 0x01 正常，或 0x02 警報）
-             * 如果 headerByte 不是 B1，程式會進入 else 判斷：
-             */
-            else {
-                if (headerByte == 0x53 || headerByte == 0x41) {
-                    // 'S' (SDAT) 或 'A' (AFM) 開頭
-                    packetType = 1;
-                } else if (headerByte == 1 || headerByte == 2) {
-                    // 1=Normal, 2=Alarm
-                    packetType = 3;
-                } else {
-                    // 預設當作設定參數
-                    packetType = 2;
-                }
             }
 
-            // 根據乾淨的 actualData 進行正確路由
-            if (packetType == 1) {
-                System.out.println(">>> 偵測到 Model Type (基本資訊) 封包");
-
+            if (cmdIdEcho == 1) {
+                System.out.println(">>> 偵測到 Model Type (基本資訊) 封包 [byte5=11]");
                 handleModelTypeData(devEui, actualData);
-            } else if (packetType == 3) {
-                System.out.println(">>>  偵測到 Status Data (即時狀態) 封包");
-
+            } else if (cmdIdEcho == 2) {
+                System.out.println(">>> 偵測到 Setting Data (設定參數) 封包 [byte5=22]");
+                handleSettingData(devEui, actualData);
+            } else if (cmdIdEcho == 3) {
+                System.out.println(">>> 偵測到 Status Data (即時狀態) 封包 [byte5=33]");
                 handleStatusData(devEui, actualData, gatewayId, fCnt, frequency, spreadingFactor, rssi, snr, gwLat,
                         gwLon, rawJsonPayload);
             } else {
-                System.out.println(">>>  偵測到 Setting Data (設定參數) 封包");
-                handleSettingData(devEui, actualData);
+                // byte5 illegal
+                // => log + 推 WS 異常事件給frontend
+                System.out.println(">>> byte5 illehal commandId (cmdIdEcho=" + cmdIdEcho
+                        + "), skip. raw=" + rawHex);
+                if (monitoringService != null) {
+                    Map<String, Object> anomaly = new HashMap<>();
+                    anomaly.put("devEui", devEui);
+                    anomaly.put("updateType", "DECODE_ANOMALY");
+                    anomaly.put("reason", "INVALID_COMMAND_MARKER");
+                    anomaly.put("rawHex", rawHex);
+                    monitoringService.sendDeviceUpdate(devEui, anomaly);
+                }
+                return;
             }
+
+            // ===== 原 Cray 版本, 不採用, 仍保留 =====
+            // int headerByte = dec[0] & 0xFF;
+            // byte[] actualData = dec;
+            // int packetType = -1;
+            //
+            // // 判斷是否為帶有 B1 表頭的新版硬體格式
+            // if (headerByte == 0xB1 && dec.length > 3) {
+            //     int cmdType = dec[1] & 0xFF;
+            //     // 切掉前面的3 Bytes表頭 還原真實的 176 Bytes資料
+            //     actualData = java.util.Arrays.copyOfRange(dec, 3, dec.length);
+            //     if (cmdType == 0x01) {
+            //         packetType = 1; // 40010101
+            //     } else if (cmdType == 0x02) {
+            //         packetType = 2; // 40010102
+            //     }
+            // }
+            // // 判斷是否為舊版無表頭格式或Status Data
+            // // 第一個 Byte 直接是機器的狀態碼 (0x01 正常 / 0x02 警報)
+            // else {
+            //     if (headerByte == 0x53 || headerByte == 0x41) {
+            //         packetType = 1; // 'S' (SDAT) 或 'A' (AFM) 開頭
+            //     } else if (headerByte == 1 || headerByte == 2) {
+            //         packetType = 3; // 1=Normal, 2=Alarm
+            //     } else {
+            //         packetType = 2; // 預設當作設定參數
+            //     }
+            // }
+            //
+            // // 根據乾淨的 actualData 進行正確路由
+            // if (packetType == 1) {
+            //     handleModelTypeData(devEui, actualData);
+            // } else if (packetType == 3) {
+            //     handleStatusData(devEui, actualData, gatewayId, fCnt, frequency, spreadingFactor, rssi, snr, gwLat,
+            //             gwLon, rawJsonPayload);
+            // } else {
+            //     handleSettingData(devEui, actualData);
+            // }
+            // ===== 原 Cray 版本 =====
 
         } catch (Exception e) {
             System.err.println("Decoder 發生錯誤: " + e.getMessage());
@@ -305,7 +329,7 @@ public class DevicePayloadDecoder {
             double tempLowAlarm = parseLittleEndianShort(data, 2) / 10.0;
             double voltHighAlarm = parseLittleEndianShort(data, 4) / 10.0;
             double voltLowAlarm = parseLittleEndianShort(data, 6) / 10.0;
-            double rfOutHighAlarm = parseLittleEndianShort(data, 10) / 10.0;
+            double rfOutHighAlarm = parseLittleEndianShort(data, 12) / 10.0;  // R103 0x90 byte 12~13
             int sysLogInterval = data[147] & 0xFF;
 
             // 警報門檻
@@ -314,8 +338,8 @@ public class DevicePayloadDecoder {
             device.setVoltHighAlarm(parseLittleEndianShort(data, 4) / 10.0);
             device.setVoltLowAlarm(parseLittleEndianShort(data, 6) / 10.0);
             device.setRippleHighAlarm((int) parseLittleEndianShort(data, 8)); // mV
-            device.setRfOutputHighAlarm(parseLittleEndianShort(data, 10) / 10.0);
-            device.setRfOutputLowAlarm(parseLittleEndianShort(data, 12) / 10.0);
+            device.setRfOutputHighAlarm(parseLittleEndianShort(data, 12) / 10.0);  // R103 0x90 byte 12~13 (Port2 FWD EQ occupies 10~11)
+            device.setRfOutputLowAlarm(parseLittleEndianShort(data, 14) / 10.0);   // R103 0x90 byte 14~15
 
             // 進階系統設定
             device.setRtnIngress1(data[16] & 0xFF);
@@ -332,6 +356,12 @@ public class DevicePayloadDecoder {
             device.setFwdLoadingHighFreq((int) parseLittleEndianShort(data, 28));
             device.setFwdLoadingPwrLow(parseLittleEndianShort(data, 30) / 10.0);
             device.setFwdLoadingPwrHigh(parseLittleEndianShort(data, 32) / 10.0);
+
+            // Location address: byte 51~146, UTF-16LE, 96 bytes (48 words). Trim trailing padding.
+            if (data.length >= 147) {
+                device.setAddress(
+                        new String(data, 51, 96, java.nio.charset.StandardCharsets.UTF_16LE).trim());
+            }
             device.setFwdPilotLowFreq((int) parseLittleEndianShort(data, 34));
             device.setFwdPilotHighFreq((int) parseLittleEndianShort(data, 36));
 
@@ -502,6 +532,8 @@ public class DevicePayloadDecoder {
             device.setDevEui(devEui);
             device.setUnitStatus(unitStatus);
             device.setLastSeenAt(java.time.LocalDateTime.now());
+            // Amplifier data freshness: advanced only when an amp status frame is decoded.
+            device.setLastAmpDataAt(java.time.LocalDateTime.now());
 
             // ==========================================
             // 同時發送websocket 和 telegram

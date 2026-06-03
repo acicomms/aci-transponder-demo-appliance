@@ -80,7 +80,7 @@ export const ALARM_SETTINGS = [
   },
 ];
 
-// Alarm Status Mask (paired with thresholds
+// Alarm Status Mask (paired with thresholds). Semantics: 0 = mask off (alarm raised normally), 1 = mask on (alarm suppressed). Default off.
 export const ALARM_MASK_SETTINGS = [
   {
     settingKey: 'mask-temperature',
@@ -127,21 +127,18 @@ export const ALARM_MASK_OTHER_SETTINGS = [
   },
 ];
 
+// DFU type option labels — kept for the read-only "DFU Type Active" runtime
+// status display. The writable DFU type control was removed (R103 deletes
+// 0x90 index 0x16); the amplifier no longer accepts a DFU type SET.
+export const DFU_TYPE_OPTIONS = [
+  { value: 1, label: '1 — 204/258 MHz' },
+  { value: 3, label: '3 — 396/492 MHz' },
+  { value: 5, label: '5 — 684/834 MHz' },
+  { value: 6, label: '6 — 85/105 MHz' },
+];
+
 // RF Mode
 export const RF_MODE_SETTINGS = [
-  {
-    settingKey: 'dfu-type',
-    label: 'DFU type',
-    widget: 'dropdown',
-    options: [
-      { value: 1, label: '1 — 204/258 MHz' },
-      { value: 3, label: '3 — 396/492 MHz' },
-      { value: 5, label: '5 — 684/834 MHz' },
-      { value: 6, label: '6 — 85/105 MHz' },
-    ],
-    helperText: 'Setting DFU type (allowed: 1, 3, 5, 6)',
-    initialFromDetail: (system) => system?.dfuType ?? 1,
-  },
   {
     settingKey: 'alsc',
     label: 'ALSC (FWD AGC Mode)',
@@ -232,65 +229,78 @@ export const RF_LOADING_SETTINGS = [
 ];
 
 // Bench Mode FWD
+// Clamp bench readback sentinel (-999) / null to 0 for slider display.
+const benchVal = (raw) => (raw == null || raw < 0 ? 0 : raw);
+
 export const BENCH_FWD_SETTINGS = [
   {
     settingKey: 'fwd-input-pad-p1',
-    label: 'Port 1 FWD Input PAD',
+    label: 'FWD Input PAD',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.port1FwdInputPad),
   },
   {
     settingKey: 'fwd-input-eq-p1',
-    label: 'Port 1 FWD Input EQ',
+    label: 'FWD Input EQ',
     unit: 'dB',
     min: 0,
     max: 12.0,
     step: 0.1,
     helperText: '0 ~ 12.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.port1FwdInputEq),
   },
   {
     settingKey: 'fwd-output-pad-grp1',
-    label: 'FWD Output PAD (group 1)',
+    label: 'FWD Output PAD',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.portNFwdOutputPad1),
   },
   {
     settingKey: 'fwd-output-pad-grp2',
-    label: 'FWD Output PAD (group 2)',
+    label: 'FWD Output PAD',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.portNFwdOutputPad2),
   },
   {
     settingKey: 'fwd-output-eq-grp1',
-    label: 'FWD Output EQ (group 1)',
+    label: 'FWD Output EQ',
     unit: 'dB',
     min: 0,
     max: 12.0,
     step: 0.1,
     helperText: '0 ~ 12.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.portNFwdOutputEq1),
   },
   {
     settingKey: 'fwd-output-eq-grp2',
-    label: 'FWD Output EQ (group 2)',
+    label: 'FWD Output EQ',
     unit: 'dB',
     min: 0,
     max: 12.0,
     step: 0.1,
     helperText: '0 ~ 12.0 dB',
+    initialFromDetail: (bm) => benchVal(bm?.portNFwdOutputEq2),
+  },
+  {
+    settingKey: 'fwd-eceq-index',
+    label: 'Port 1 FWD Input CEQ',
+    unit: 'dB',
+    min: 0,
+    max: 24,
+    step: 1,
+    helperText: '0 ~ 24 dB',
     initialFromDetail: () => 0,
   },
 ];
@@ -299,94 +309,85 @@ export const BENCH_FWD_SETTINGS = [
 export const BENCH_REV_SETTINGS = [
   {
     settingKey: 'rev-input-pad-grp1',
-    label: 'REV Input PAD (group 1)',
+    label: 'REV Input PAD',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.portNRevInputPad1),
   },
   {
     settingKey: 'rev-input-pad-grp2',
-    label: 'REV Input PAD (group 2)',
+    label: 'REV Input PAD',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.portNRevInputPad2),
   },
   {
     settingKey: 'rev-input-pad-grp3',
-    label: 'REV Input PAD (group 3)',
+    label: 'REV Input PAD',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.portNRevInputPad3),
   },
   {
     settingKey: 'rev-output-eq-p1',
-    label: 'Port 1 REV Output EQ',
+    label: 'REV Output EQ',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.port1RevOutputEq),
   },
   {
     settingKey: 'rev-output-pad-p1',
-    label: 'Port 1 REV Output PAD',
+    label: 'REV Output PAD',
     unit: 'dB',
     min: 0,
     max: 20.0,
     step: 0.1,
     helperText: '0 ~ 20.0 dB',
-    initialFromDetail: () => 0,
+    initialFromDetail: (bm) => benchVal(bm?.port1RevOutputPad),
   },
   {
     settingKey: 'rev-ingress-1',
-    label: 'REV Ingress Setting #1',
+    label: 'REV Ingress',
     widget: 'dropdown',
     options: [
-      { value: 0, label: '0 — 0dB (default)' },
-      { value: 1, label: '1 — 3dB 30min' },
-      { value: 2, label: '2 — 6dB 30min' },
-      { value: 3, label: '3 — 12dB 30min' },
-      { value: 4, label: '4 — Max dB 30min' },
+      { value: 0, label: '0 — 0 dB (default)' },
+      { value: 2, label: '2 — 6 dB' },
     ],
-    helperText: 'Bridge switch state',
+    helperText: 'RTN bridge switch (0 / 6 dB)',
     initialFromDetail: () => 0,
   },
   {
     settingKey: 'rev-ingress-2',
-    label: 'REV Ingress Setting #2',
+    label: 'REV Ingress',
     widget: 'dropdown',
     options: [
-      { value: 0, label: '0 — 0dB (default)' },
-      { value: 1, label: '1 — 3dB 30min' },
-      { value: 2, label: '2 — 6dB 30min' },
-      { value: 3, label: '3 — 12dB 30min' },
-      { value: 4, label: '4 — Max dB 30min' },
+      { value: 0, label: '0 — 0 dB (default)' },
+      { value: 2, label: '2 — 6 dB' },
     ],
-    helperText: 'Bridge switch state',
+    helperText: 'RTN bridge switch (0 / 6 dB)',
     initialFromDetail: () => 0,
   },
   {
     settingKey: 'rev-ingress-3',
-    label: 'REV Ingress Setting #3',
+    label: 'REV Ingress',
     widget: 'dropdown',
     options: [
-      { value: 0, label: '0 — 0dB (default)' },
-      { value: 1, label: '1 — 3dB 30min' },
-      { value: 2, label: '2 — 6dB 30min' },
-      { value: 3, label: '3 — 12dB 30min' },
-      { value: 4, label: '4 — Max dB 30min' },
+      { value: 0, label: '0 — 0 dB (default)' },
+      { value: 2, label: '2 — 6 dB' },
     ],
-    helperText: 'Bridge switch state',
+    helperText: 'RTN bridge switch (0 / 6 dB)',
     initialFromDetail: () => 0,
   },
 ];
@@ -427,16 +428,6 @@ export const SYSTEM_LOG_SETTINGS = [
       { value: 240, label: '240 min' },
     ],
     helperText: 'RF output log cadence',
-    initialFromDetail: () => 0,
-  },
-  {
-    settingKey: 'fwd-eceq-index',
-    label: 'FWD E-CEQ Index',
-    unit: 'dB',
-    min: 0,
-    max: 24,
-    step: 1,
-    helperText: '0 ~ 24 dB',
     initialFromDetail: () => 0,
   },
 ];

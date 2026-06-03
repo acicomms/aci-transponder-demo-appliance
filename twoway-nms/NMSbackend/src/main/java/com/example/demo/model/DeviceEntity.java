@@ -25,10 +25,11 @@ public class DeviceEntity {
     private String fwVersion;    // 韌體版本
     private String mfgDate;      // 製造日期 
     private Integer partIndex;   // Part Index 
-    
+
     // 地理位置
     private String latitude;
     private String longitude;
+    private String address;      // Location address text (settings frame byte 51~146, UTF-16)
     
     // ==========================================
     // 02 設定參數 (Setting Data) - 警報門檻
@@ -96,8 +97,15 @@ public class DeviceEntity {
     // ==========================================
     private Integer unitStatus;      // 1=Normal, 其他為 Alarm
     private Boolean isAlarmAcked;    // 預設為 true
-    private String lastGatewayId; 
+    private String lastGatewayId;
     private LocalDateTime lastSeenAt;
-    private String deviceProfileName; 
-    private String deviceClassEnabled; 
+    private String deviceProfileName;
+    private String deviceClassEnabled;
+
+    // ==========================================
+    // Health-status thresholds & amplifier data freshness
+    // ==========================================
+    private LocalDateTime lastAmpDataAt;        // last amp status frame decode time (UTC)
+    private Integer ampOfflineMin = 6;          // amp-freshness offline threshold (minutes)
+    private Integer transponderOfflineMin = 10; // transponder offline threshold (minutes)
 }

@@ -9,6 +9,16 @@ export const DeviceProvider = ({ children }) => {
   // P2: default to global dashboard so "/" lands on Dashboard, not blank
   const [selectedDevice, setSelectedDevice] = useState({ itemType: 'global-dashboard' });
 
+  // Display-only temperature unit ('C' | 'F'); protocol/backend always Celsius.
+  const [tempUnit, setTempUnitState] = useState(
+    () => (localStorage.getItem('temp.unit') === 'F' ? 'F' : 'C')
+  );
+  const setTempUnit = useCallback((u) => {
+    const v = u === 'F' ? 'F' : 'C';
+    localStorage.setItem('temp.unit', v);
+    setTempUnitState(v);
+  }, []);
+
   // ==========================================
   // 側邊欄 (Sidebar) 全域資料狀態
   // ==========================================
@@ -126,6 +136,7 @@ export const DeviceProvider = ({ children }) => {
       appsData, gatewaysData, refreshSidebarData,
       pendingCommand, requestCommandLock, releaseCommandLock, showToast,
       unreadAlarmCount, markAlarmsRead,
+      tempUnit, setTempUnit,
     }}>
       {children}
 

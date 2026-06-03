@@ -1,4 +1,4 @@
-import { RF_MODE_SETTINGS } from './settingDefinitions';
+import { DFU_TYPE_OPTIONS } from './settingDefinitions';
 
 // Working Mode
 export const WORKING_MODE_LABELS = {
@@ -21,10 +21,6 @@ export const formatWorkingMode = (raw) => {
 };
 
 // DFU Type Active
-const DFU_TYPE_OPTIONS = (
-  RF_MODE_SETTINGS.find(s => s.settingKey === 'dfu-type')?.options || []
-);
-
 export const formatDfuTypeActive = (raw) => {
   if (raw === null || raw === undefined || raw === -999) return '—';
   const match = DFU_TYPE_OPTIONS.find(o => o.value === raw);

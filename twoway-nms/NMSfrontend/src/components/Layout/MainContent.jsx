@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, IconButton, Table, TableHead, TableBody, TableRow, TableCell, Tabs, Tab, Card, CardContent, Typography, Box, Grid, CircularProgress, Chip, Button, Tooltip, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, MenuItem, Select, FormControl, InputLabel, Switch, FormControlLabel, Divider } from '@mui/material';
+import {
+  TextField, IconButton, Table, TableHead, TableBody, TableRow,
+  TableCell, Tabs, Tab, Card, CardContent, Typography, Box, Grid, CircularProgress,
+  Chip, Button, Tooltip, Stack, Dialog, DialogTitle, DialogContent, DialogContentText,
+  DialogActions, MenuItem, Select, FormControl, InputLabel, Switch, FormControlLabel,
+  Divider, ToggleButton, ToggleButtonGroup
+} from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,6 +26,7 @@ import DeviceTopology from '../../components/Topology/DeviceTopology';
 
 import SettingsTab from '../Device/SettingsTab';
 import DiagnosticsTab from '../Device/DiagnosticsTab';
+import ConfigTab from '../Device/ConfigTab';
 
 import { getWebSocketUrl } from '../../utils/websocketUtils';
 
@@ -36,7 +43,7 @@ import {
   BORDERLESS_TABLE_BODY_SX,
 } from '../../constants/cardStyles';
 // setting definitions reused for readonly snapshot in Basic Info tab.
-import { ALARM_SETTINGS, RF_MODE_SETTINGS, RF_LOADING_SETTINGS } from '../../constants/settingDefinitions';
+import { ALARM_SETTINGS, RF_MODE_SETTINGS, RF_LOADING_SETTINGS, DFU_TYPE_OPTIONS } from '../../constants/settingDefinitions';
 
 // ChirpStack lastSeenAt (ISO8601) => YYYY-MM-DD HH:mm:ss
 // null / parse 失敗 => '-'.
@@ -49,6 +56,13 @@ const formatLastSeen = (iso) => {
     `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
+// Date => local HH:mm:ss, for the "Last updated" header timestamp.
+const formatClock = (date) => {
+  if (!date) return '-';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
 const formatSentinel = (value, unit) => {
   if (value === null || value === undefined) return '—';
   if (value === -999 || value === -999.0) return '—';
@@ -57,10 +71,10 @@ const formatSentinel = (value, unit) => {
 
 const kebabToCamel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 
-// DFU type → option label, e.g. 1 → "1 — 204/258 MHz" (per Phase 2 spec).
+// DFU type
 const formatDfuLabel = (v) => {
   if (v === null || v === undefined || v === -999) return '—';
-  const opt = RF_MODE_SETTINGS[0].options.find(o => o.value === v);
+  const opt = DFU_TYPE_OPTIONS.find(o => o.value === v);
   return opt ? opt.label : String(v);
 };
 
@@ -87,10 +101,15 @@ export default function MainContent({ selectedDevice }) {
   const [deviceDetail, setDeviceDetail] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Page-level auto-refresh (default off) + last successful detail load time.
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+
   const [isClearingQueue, setIsClearingQueue] = useState(false);
   const [clearQueueOpen, setClearQueueOpen] = useState(false);
 
-  const { requestCommandLock, releaseCommandLock, pendingCommand, setSelectedDevice, showToast, refreshSidebarData, appsData } = useDevice();
+  const { requestCommandLock, releaseCommandLock, pendingCommand, setSelectedDevice,
+    showToast, refreshSidebarData, appsData, tempUnit, setTempUnit } = useDevice();
   const navigate = useNavigate();
 
   // === add Device modal state ===
@@ -212,9 +231,11 @@ export default function MainContent({ selectedDevice }) {
     try {
       const data = await DeviceApi.getDeviceDetail(devEui);
       setDeviceDetail(data);
+      setLastUpdatedAt(new Date());
     } catch (error) {
       console.error("無法載入設備詳情", error);
-      setDeviceDetail(null);
+      // Only clear on initial load; background refresh keeps existing data.
+      if (showLoading) setDeviceDetail(null);
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -255,6 +276,12 @@ export default function MainContent({ selectedDevice }) {
               fetchDeviceDetail(false);
             }, 1000);
           }
+          else if (data.updateType === 'DECODE_ANOMALY') {
+            // Backend received an uplink whose envelope byte5 command marker was
+            // invalid (not a recognized 1~9 nibble). The packet was dropped and
+            // nothing was written; surface a non-blocking warning to the operator.
+            showToast(`Device ${devEui} sent an unrecognized packet (invalid command marker) and it was ignored`, 'warning');
+          }
           else {
 
             console.log(" 收到後端資料更新推播，背景重新拉取 API...");
@@ -269,6 +296,16 @@ export default function MainContent({ selectedDevice }) {
     stompClient.activate();
     return () => stompClient.deactivate();
   }, [devEui, isApplication]);
+
+  // Auto-refresh poll (30s). Cleared on toggle-off, device switch, unmount.
+  // Background read only (no SET read-back); failure keeps existing data.
+  useEffect(() => {
+    if (!autoRefresh || isApplication || !devEui) return;
+    const id = setInterval(() => {
+      fetchDeviceDetail(false);
+    }, 30000);
+    return () => clearInterval(id);
+  }, [autoRefresh, devEui, isApplication]);
 
   // ==========================================
   // Fetch OTAA keys when device changes
@@ -1009,6 +1046,22 @@ export default function MainContent({ selectedDevice }) {
         }
         actions={
           <>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mr: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Last updated {formatClock(lastUpdatedAt)}
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={autoRefresh}
+                    onChange={(e) => setAutoRefresh(e.target.checked)}
+                  />
+                }
+                label={<Typography variant="caption">Auto-refresh</Typography>}
+                sx={{ m: 0 }}
+              />
+            </Stack>
             <Tooltip title="If the screen freezes or the device is unresponsive, click this button to clear the stuck task.">
               <Button
                 variant="outlined"
@@ -1051,6 +1104,7 @@ export default function MainContent({ selectedDevice }) {
           <Tab label="RF Spectrum" />
           <Tab label="Link Metrics" />
           <Tab label="Diagnostics" />
+          <Tab label="Config" />
         </Tabs>
       </Box>
 
@@ -1068,6 +1122,18 @@ export default function MainContent({ selectedDevice }) {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography sx={PAGE_SECTION_HEADING_SX}>Amplifier Information</Typography>
                 <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="caption" color="text.secondary">
+                    Transponder:{' '}
+                    <Box
+                      component="span"
+                      sx={{
+                        fontWeight: 600,
+                        color: deviceDetail?.transponderStatus === 'online' ? '#047857' : '#94A3B8',
+                      }}
+                    >
+                      {deviceDetail?.transponderStatus === 'online' ? 'Online' : 'Offline'}
+                    </Box>
+                  </Typography>
                   {syncPending.INFO && (
                     <Typography variant="caption" color="text.secondary">Syncing...</Typography>
                   )}
@@ -1145,6 +1211,28 @@ export default function MainContent({ selectedDevice }) {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                    HW Version
+                  </Typography>
+                  <Typography variant="body2">{deviceDetail.basicInfo.hwVersion || '-'}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                    MFG Date
+                  </Typography>
+                  <Typography variant="body2">{deviceDetail.basicInfo.mfgDate || '-'}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                    Coordinates
+                  </Typography>
+                  <Typography variant="body2">
+                    {deviceDetail.latitude && deviceDetail.longitude
+                      ? `${deviceDetail.latitude}, ${deviceDetail.longitude}`
+                      : '-'}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                     Last Seen
                   </Typography>
                   <Typography variant="body2">{formatLastSeen(deviceDetail.lastSeenAt)}</Typography>
@@ -1158,9 +1246,9 @@ export default function MainContent({ selectedDevice }) {
                 {(() => {
                   const aa = deviceDetail.latestStatus?.activeAlarms || {};
                   const items = [
-                    { key: 'isTempAlarm',    label: 'Temperature' },
+                    { key: 'isTempAlarm', label: 'Temperature' },
                     { key: 'isVoltageAlarm', label: 'Voltage' },
-                    { key: 'isRippleAlarm',  label: 'Ripple' },
+                    { key: 'isRippleAlarm', label: 'Ripple' },
                     { key: 'isRfPowerAlarm', label: 'RF Power' },
                   ];
                   const anyActive = items.some(i => aa[i.key]);
@@ -1189,6 +1277,15 @@ export default function MainContent({ selectedDevice }) {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography sx={PAGE_SECTION_HEADING_SX}>Real-Time Status</Typography>
                 <Stack direction="row" alignItems="center" spacing={1}>
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={tempUnit}
+                    onChange={(e, v) => v && setTempUnit(v)}
+                  >
+                    <ToggleButton value="C" sx={{ px: 1.25, py: 0.25, lineHeight: 1 }}>°C</ToggleButton>
+                    <ToggleButton value="F" sx={{ px: 1.25, py: 0.25, lineHeight: 1 }}>°F</ToggleButton>
+                  </ToggleButtonGroup>
                   {syncPending.STATUS && (
                     <Typography variant="caption" color="text.secondary">Syncing...</Typography>
                   )}
@@ -1399,6 +1496,10 @@ export default function MainContent({ selectedDevice }) {
 
           {tab === 5 && (
             <DiagnosticsTab devEui={devEui} />
+          )}
+
+          {tab === 6 && (
+            <ConfigTab devEui={devEui} deviceDetail={deviceDetail} />
           )}
         </>
       )}

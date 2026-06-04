@@ -15,6 +15,7 @@ import {
   BORDERLESS_TABLE_HEAD_SX,
   BORDERLESS_TABLE_BODY_SX,
 } from '../constants/cardStyles';
+import { cToF, round1 } from '../utils/temperature';
 
 const CATEGORY_OPTIONS = ['TEMPERATURE', 'VOLTAGE', 'RIPPLE', 'TCP', 'UNIT_STATUS'];
 const CATEGORY_LABELS  = {
@@ -52,10 +53,12 @@ const formatDuration = (sec) => {
   return `${d}d ${h % 24}h`;
 };
 
-const formatTriggerValue = (category, value) => {
+const formatTriggerValue = (category, value, tempUnit) => {
   if (value == null) return '-';
   switch (category) {
-    case 'TEMPERATURE': return `${Number(value).toFixed(1)} °C`;
+    case 'TEMPERATURE': return tempUnit === 'F'
+      ? `${round1(cToF(Number(value))).toFixed(1)} °F`
+      : `${Number(value).toFixed(1)} °C`;
     case 'VOLTAGE':     return `${Number(value).toFixed(1)} V`;
     case 'RIPPLE':      return `${Math.round(value)} mV`;
     case 'TCP':         return `${Number(value).toFixed(1)} dBmV`;
@@ -74,7 +77,7 @@ const formatDateTime = (str) => {
 };
 
 export default function AlarmsPage() {
-  const { appsData, markAlarmsRead } = useDevice();
+  const { appsData, markAlarmsRead, tempUnit } = useDevice();
 
   // 從 appsData tree 攤平成設備清單
   const allDevices = useMemo(() => {
@@ -281,7 +284,7 @@ export default function AlarmsPage() {
                   </TableCell>
                   <TableCell sx={BORDERLESS_TABLE_BODY_SX}>{formatCategory(ev.category)}</TableCell>
                   <TableCell sx={BORDERLESS_TABLE_BODY_SX}>{formatDuration(ev.durationSeconds)}</TableCell>
-                  <TableCell sx={BORDERLESS_TABLE_BODY_SX}>{formatTriggerValue(ev.category, ev.triggerValue)}</TableCell>
+                  <TableCell sx={BORDERLESS_TABLE_BODY_SX}>{formatTriggerValue(ev.category, ev.triggerValue, tempUnit)}</TableCell>
                   <TableCell sx={BORDERLESS_TABLE_BODY_SX}>{isActive ? '-' : formatDateTime(ev.endTime)}</TableCell>
                 </TableRow>
               );

@@ -3,6 +3,8 @@ package com.example.demo.controller;
 import com.example.demo.dto.*;
 import com.example.demo.model.ChirpStackApp;
 import com.example.demo.model.DeviceStatusLog;
+import com.example.demo.model.PartSettingMap;
+import com.example.demo.repository.PartSettingMapRepository;
 import com.example.demo.service.AlarmEventService;
 import com.example.demo.service.ApplicationService;
 import com.example.demo.service.DeviceService;
@@ -42,6 +44,9 @@ public class IotController {
 
     @Autowired
     private RfTestSessionService rfTestSessionService;
+
+    @Autowired
+    private PartSettingMapRepository partSettingMapRepository;
 
 
     // ==========================================
@@ -425,6 +430,40 @@ public class IotController {
         return ResponseEntity.ok(detail);
     }
 
+    // ==========================================
+    // Update per-device health-status thresholds (minutes). No hardware downlink.
+    // JSON: { "ampOfflineMin": 6, "transponderOfflineMin": 10 }
+    // ==========================================
+    @PutMapping("/devices/{devEui}/health-thresholds")
+    public ResponseEntity<?> updateHealthThresholds(
+            @PathVariable String devEui,
+            @RequestBody Map<String, Object> payload) {
+        try {
+            Integer ampOfflineMin = toInt(payload.get("ampOfflineMin"));
+            Integer transponderOfflineMin = toInt(payload.get("transponderOfflineMin"));
+
+            if (ampOfflineMin == null && transponderOfflineMin == null) {
+                return ResponseEntity.badRequest().body(Map.of("success", false,
+                        "message", "At least one of ampOfflineMin / transponderOfflineMin is required"));
+            }
+            if ((ampOfflineMin != null && (ampOfflineMin < 1 || ampOfflineMin > 1440))
+                    || (transponderOfflineMin != null && (transponderOfflineMin < 1 || transponderOfflineMin > 1440))) {
+                return ResponseEntity.badRequest().body(Map.of("success", false,
+                        "message", "Threshold(s) out of range (1~1440 minutes)"));
+            }
+
+            deviceService.updateHealthThresholds(devEui, ampOfflineMin, transponderOfflineMin);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Health-status thresholds updated"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/devices")
     public ResponseEntity<List<Map<String, Object>>> getDevices(@RequestParam String applicationId) {
         return ResponseEntity.ok(deviceService.getDevicesByApplication(applicationId));
@@ -567,9 +606,29 @@ public class IotController {
         try {
             String partName = deviceService.getDevicePartName(devEui);  // null/blank if not yet synced
 
+            // Any key present in part_setting_map is "port-managed": it shows only
+            // for part types that explicitly list it, and carries a port label.
+            java.util.Set<String> portManagedKeys = new java.util.HashSet<>();
+            for (PartSettingMap m : partSettingMapRepository.findAll()) {
+                portManagedKeys.add(m.getSettingKey());
+            }
+            // This device's port-managed keys -> port label.
+            java.util.Map<String, String> devicePortMap = new java.util.HashMap<>();
+            String partKey = PartSettingMap.normalizeKey(partName);
+            if (!partKey.isEmpty()) {
+                for (PartSettingMap m : partSettingMapRepository.findByPartKey(partKey)) {
+                    devicePortMap.put(m.getSettingKey(), m.getPortLabel());
+                }
+            }
+
             java.util.List<Map<String, Object>> result = new java.util.ArrayList<>();
             for (SettingDefinition def : SettingDefinition.values()) {
-                if (!def.appliesTo(partName)) continue;
+                String key = def.getSettingKey();
+                String portLabel = null;
+                if (portManagedKeys.contains(key)) {
+                    if (!devicePortMap.containsKey(key)) continue; // hidden for this part type
+                    portLabel = devicePortMap.get(key);
+                }
                 Map<String, Object> row = new java.util.LinkedHashMap<>();
                 row.put("settingKey",   def.getSettingKey());
                 row.put("displayName",  def.getDisplayName());
@@ -581,7 +640,8 @@ public class IotController {
                 row.put("maxRaw",       def.getMaxRaw());
                 row.put("encoding",     def.getEncoding().name());
                 row.put("allowedValues", def.getAllowedValues());          // null if range-based
-                row.put("applicablePartTypes", def.getApplicablePartTypes()); // null = all
+                row.put("applicablePartTypes", def.getApplicablePartTypes()); // dead code: no longer drives visibility
+                row.put("portLabel",    portLabel);                        // null when not port-managed
                 result.add(row);
             }
             return ResponseEntity.ok(Map.of(

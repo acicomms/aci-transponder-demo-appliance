@@ -111,7 +111,7 @@ public class GatewayService {
                     map.put("lng", dev.getLongitude());
                     map.put("gatewayId", dev.getLastGatewayId());
 
-                    String healthStatus = DeviceHealthStatus.compute(dev.getLastSeenAt(), dev.getUnitStatus()).toJsonValue();
+                    String healthStatus = DeviceHealthStatus.compute(dev.getLastAmpDataAt(), dev.getUnitStatus(), dev.getAmpOfflineMin()).toJsonValue();
                     map.put("healthStatus", healthStatus);
                     return map;
                 }).collect(Collectors.toList());
@@ -179,7 +179,7 @@ public class GatewayService {
             map.put("unitStatus",   dev.getUnitStatus());
             map.put("parentDevEui", null); // 樹狀預留欄位 目前都是 null
             map.put("healthStatus",
-                    DeviceHealthStatus.compute(dev.getLastSeenAt(), dev.getUnitStatus()).toJsonValue());
+                    DeviceHealthStatus.compute(dev.getLastAmpDataAt(), dev.getUnitStatus(), dev.getAmpOfflineMin()).toJsonValue());
             result.add(map);
         }
         return result;

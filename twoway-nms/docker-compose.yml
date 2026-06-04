@@ -86,7 +86,7 @@ networks:
   nms-network:
     driver: bridge
   demo-net:               # add
-    # name: demo_lora-net   # chirpstack 那邊的真名
+    # name: demo_lora-net   # chirpstack network
     name: chirpstack-docker_lora-net
     external: true
 

@@ -3,8 +3,11 @@ import { Box, ToggleButtonGroup, ToggleButton, CircularProgress, Typography, Ico
 import ReactECharts from 'echarts-for-react';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { DeviceApi } from '../../api/deviceApi';
+import { useDevice } from '../../contexts/DeviceContext';
+import { cToF, round1 } from '../../utils/temperature';
 
 export default function DeviceHistoryCharts({ devEui }) {
+  const { tempUnit } = useDevice();
   const [timeRange, setTimeRange] = useState('24h');
   const [layoutMode, setLayoutMode] = useState('combined');
   const [historyData, setHistoryData] = useState([]);
@@ -46,7 +49,9 @@ export default function DeviceHistoryCharts({ devEui }) {
 
   // 準備 ECharts 需要的資料陣列
   const xData = historyData.map(d => new Date(d.createdAt).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }));
-  const tempSeries = historyData.map(d => d.temperature);
+  const tempSeries = historyData.map(d =>
+    (tempUnit === 'F' && d.temperature != null ? round1(cToF(d.temperature)) : d.temperature)
+  );
   const voltSeries = historyData.map(d => d.voltage);
   const rfSeries = historyData.map(d => d.rfOutputPower);
   const rippleSeries = historyData.map(d => d.ripple);
@@ -77,7 +82,7 @@ export default function DeviceHistoryCharts({ devEui }) {
           { type: 'category', data: xData, gridIndex: 1 } // 下方顯示 X 軸文字
         ],
         yAxis: [
-          { type: 'value', name: 'Temp. (℃)', gridIndex: 0, position: 'left' },
+          { type: 'value', name: tempUnit === 'F' ? 'Temp. (℉)' : 'Temp. (℃)', gridIndex: 0, position: 'left' },
           { type: 'value', name: 'RF (dBmV)', gridIndex: 0, position: 'right' },
           { type: 'value', name: 'Vol. (V)', gridIndex: 1, position: 'left' },
           { type: 'value', name: 'ripple (mV)', gridIndex: 1, position: 'right' }

@@ -72,17 +72,30 @@ public class DeviceService {
             response.setName(device.getName() != null ? device.getName() : "未命名");
             response.setLastSeenAt(device.getLastSeenAt());
 
-            // healthStatus: 統一用 enum 計算 (5min/10min 門檻)
+            // Main health status: amplifier data freshness (per-device threshold).
             response.setHealthStatus(
-                    DeviceHealthStatus.compute(device.getLastSeenAt(), device.getUnitStatus()).toJsonValue()
+                    DeviceHealthStatus.compute(device.getLastAmpDataAt(), device.getUnitStatus(), device.getAmpOfflineMin()).toJsonValue()
             );
+            // Secondary indicator + thresholds for Config tab / Basic Info.
+            response.setTransponderStatus(
+                    DeviceHealthStatus.computeTransponder(device.getLastSeenAt(), device.getTransponderOfflineMin()).toJsonValue()
+            );
+            response.setLastAmpDataAt(device.getLastAmpDataAt());
+            response.setAmpOfflineMin(device.getAmpOfflineMin() != null ? device.getAmpOfflineMin() : 6);
+            response.setTransponderOfflineMin(device.getTransponderOfflineMin() != null ? device.getTransponderOfflineMin() : 10);
+
+            // Device-reported coordinates (Model frame byte 69~107)
+            response.setLatitude(device.getLatitude());
+            response.setLongitude(device.getLongitude());
 
             // 檢查是否缺少基本資訊
             if (device.getPartName() != null) {
                 response.getBasicInfo().setPartName(device.getPartName());
                 response.getBasicInfo().setPartNumber(device.getPartNumber());
                 response.getBasicInfo().setSerialNumber(device.getSerialNumber());
+                response.getBasicInfo().setHwVersion(device.getHwVersion());
                 response.getBasicInfo().setFwVersion(device.getFwVersion());
+                response.getBasicInfo().setMfgDate(device.getMfgDate());
             } else {
                 missingBasicInfo = true;
             }
@@ -101,6 +114,7 @@ public class DeviceService {
                 response.getSettings().getSystem().setDfuType(device.getDfuTypeSetting());
                 response.getSettings().getSystem().setAlsc(device.getFwdAgcMode());
                 response.getSettings().getSystem().setSettingMode(device.getSettingMode());
+                response.getSettings().getSystem().setLocationAddress(device.getAddress());
                 // RF loading & pilot freq/pwr initial-fill (entity 已由 SETTINGS_02 解析填入)
                 response.getSettings().getLoadingPilot().setFwdLoadingLowFreq(device.getFwdLoadingLowFreq());
                 response.getSettings().getLoadingPilot().setFwdLoadingHighFreq(device.getFwdLoadingHighFreq());
@@ -116,6 +130,18 @@ public class DeviceService {
                 response.getSettings().getAlarmMasks().setPilotLowFreq(device.getMaskRfOutPilotLow());
                 response.getSettings().getAlarmMasks().setPilotHighFreq(device.getMaskRfOutPilotHigh());
                 response.getSettings().getAlarmMasks().setTampSwitch(device.getMaskTampSwitch());
+                // Bench Mode PAD/EQ readback (entity parsed from SETTINGS_02 byte 148~174)
+                response.getSettings().getBenchMode().setPort1FwdInputPad(device.getPort1FwdInputPad());
+                response.getSettings().getBenchMode().setPort1FwdInputEq(device.getPort1FwdInputEq());
+                response.getSettings().getBenchMode().setPortNFwdOutputPad1(device.getPortNFwdOutputPad1());
+                response.getSettings().getBenchMode().setPortNFwdOutputPad2(device.getPortNFwdOutputPad2());
+                response.getSettings().getBenchMode().setPortNFwdOutputEq1(device.getPortNFwdOutputEq1());
+                response.getSettings().getBenchMode().setPortNFwdOutputEq2(device.getPortNFwdOutputEq2());
+                response.getSettings().getBenchMode().setPortNRevInputPad1(device.getPortNRevInputPad1());
+                response.getSettings().getBenchMode().setPortNRevInputPad2(device.getPortNRevInputPad2());
+                response.getSettings().getBenchMode().setPortNRevInputPad3(device.getPortNRevInputPad3());
+                response.getSettings().getBenchMode().setPort1RevOutputEq(device.getPort1RevOutputEq());
+                response.getSettings().getBenchMode().setPort1RevOutputPad(device.getPort1RevOutputPad());
             } else {
                 missingSettings = true;
             }
@@ -442,14 +468,24 @@ public class DeviceService {
             }
 
             // healthStatus: 跟 map-data / DeviceDetailResponseDto 一致的計算路徑
-            LocalDateTime ls = (deviceEntity != null) ? deviceEntity.getLastSeenAt() : lastSeenLdt;
+            LocalDateTime ampTs = (deviceEntity != null) ? deviceEntity.getLastAmpDataAt() : null;
             Integer us = (deviceEntity != null) ? deviceEntity.getUnitStatus() : null;
+            Integer ampMin = (deviceEntity != null) ? deviceEntity.getAmpOfflineMin() : null;
             map.put("healthStatus",
-                    DeviceHealthStatus.compute(ls, us).toJsonValue());
+                    DeviceHealthStatus.compute(ampTs, us, ampMin).toJsonValue());
 
             result.add(map);
         }
         return result;
+    }
+
+    // Persist per-device health-status thresholds (minutes). No hardware downlink.
+    public void updateHealthThresholds(String devEui, Integer ampOfflineMin, Integer transponderOfflineMin) {
+        DeviceEntity device = deviceRepository.findById(devEui)
+                .orElseThrow(() -> new IllegalArgumentException("Device not found: " + devEui));
+        if (ampOfflineMin != null) device.setAmpOfflineMin(ampOfflineMin);
+        if (transponderOfflineMin != null) device.setTransponderOfflineMin(transponderOfflineMin);
+        deviceRepository.save(device);
     }
 
     public void updateDevice(String devEui, DeviceConfigDto dto) {
@@ -543,13 +579,15 @@ public class DeviceService {
 
             boolean hasImportantTask = false;
 
-            // 檢查是否有不能被中斷的指令 (例如頻譜 40010104 ~ 40010109)
+            // Protect commands that must not be flushed mid-flight:
+            // spectrum scan (40010104~09) and SET (4001010A).
             for (DeviceQueueItem item : queueResp.getResultList()) {
                 String hexCmd = bytesToHex(item.getData().toByteArray()).toUpperCase();
 
                 if (hexCmd.startsWith("40010104") || hexCmd.startsWith("40010105") ||
                         hexCmd.startsWith("40010106") || hexCmd.startsWith("40010107") ||
-                        hexCmd.startsWith("40010108") || hexCmd.startsWith("40010109")) {
+                        hexCmd.startsWith("40010108") || hexCmd.startsWith("40010109") ||
+                        hexCmd.startsWith("4001010A")) {
                     hasImportantTask = true;
                     break;
                 }

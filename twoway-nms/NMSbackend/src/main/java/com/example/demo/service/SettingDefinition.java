@@ -15,7 +15,7 @@ public enum SettingDefinition {
     RF_OUT_LOW           ("rf-out-low",           (byte) 0x90, (byte) 0x0E, 2, 10,     0,  800, EncodingType.UINT16_LE, "RF Output Total Power Low Alarm"),
 
     // ----- (2) RF mode -----
-    DFU_TYPE             ("dfu-type",             (byte) 0x90, (byte) 0x16, 1,  1,     1,    6, EncodingType.UINT8,     "DFU type",                       new int[]{1, 3, 5, 6}),
+//    DFU_TYPE             ("dfu-type",             (byte) 0x90, (byte) 0x16, 1,  1,     1,    6, EncodingType.UINT8,     "DFU type",                       new int[]{1, 3, 5, 6}),
     ALSC                 ("alsc",                 (byte) 0x90, (byte) 0x18, 1,  1,     0,    1, EncodingType.UINT8,     "ALSC (FWD AGC Mode)"),
     SETTING_MODE         ("setting-mode",         (byte) 0x90, (byte) 0x17, 1,  1,     0,    3, EncodingType.UINT8,     "Setting Mode",                   new int[]{0, 1, 3}),
 
@@ -34,7 +34,7 @@ public enum SettingDefinition {
     FWD_ECEQ_INDEX       ("fwd-eceq-index",       (byte) 0x90, (byte) 0x13, 1,  1,     0,   24, EncodingType.UINT8,     "FWD E-CEQ Index"),
     RF_OUTPUT_LOG_MIN    ("rf-output-log-min",    (byte) 0x90, (byte) 0x14, 1,  1,     0,  240, EncodingType.UINT8,     "RF Output Log in Minutes",       new int[]{0, 30, 60, 120, 180, 240}),
 
-    // ----- (5) Status Mask (7 entries, R102) -----
+    // ----- (5) Status Mask (7 entries, R103) -----
     MASK_PILOT_LOW_FREQ  ("mask-pilot-low-freq",  (byte) 0x90, (byte) 0x28, 1,  1,     0,    1, EncodingType.UINT8,     "Status Mask RF Output Pilot Low Frequency"),
     MASK_PILOT_HIGH_FREQ ("mask-pilot-high-freq", (byte) 0x90, (byte) 0x29, 1,  1,     0,    1, EncodingType.UINT8,     "Status Mask RF Output Pilot High Frequency"),
     MASK_TEMPERATURE     ("mask-temperature",     (byte) 0x90, (byte) 0x2A, 1,  1,     0,    1, EncodingType.UINT8,     "Status Mask Temperature"),
@@ -51,7 +51,7 @@ public enum SettingDefinition {
     FWD_INPUT_EQ_P1      ("fwd-input-eq-p1",      (byte) 0x90, (byte) 0x96, 2, 10,     0,  120, EncodingType.UINT16_LE, "Port 1 FWD Input EQ"),
 
     // ----- (8) Bench Mode FWD Output (per port group) -----
-    // 0xA2 / 0xAA = PAD #1 / PAD #2 (port assignment depends on partType per R102)
+    // 0xA2 / 0xAA = PAD #1 / PAD #2 (port assignment depends on partType)
     // 0xAC / 0xAE = EQ  #1 / EQ  #2 (same logic)
     FWD_OUTPUT_PAD_GRP1  ("fwd-output-pad-grp1",  (byte) 0x90, (byte) 0xA2, 2, 10,     0,  200, EncodingType.UINT16_LE, "FWD Output PAD (group 1)",       null, new String[]{"SDAT", "SDAM", "AMT MB", "AFM TR", "AFM BR"}),
     FWD_OUTPUT_PAD_GRP2  ("fwd-output-pad-grp2",  (byte) 0x90, (byte) 0xAA, 2, 10,     0,  200, EncodingType.UINT16_LE, "FWD Output PAD (group 2)",       null, new String[]{"SDAT", "AFM TR"}),

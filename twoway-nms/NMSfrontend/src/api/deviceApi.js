@@ -253,6 +253,23 @@ export const DeviceApi = {
   },
 
   // ==========================================
+  // Update health-status thresholds — PUT /iot/devices/{devEui}/health-thresholds
+  // body: { ampOfflineMin, transponderOfflineMin }
+  // ==========================================
+  updateHealthThresholds: async (devEui, body) => {
+    try {
+      const res = await apiClient.put(
+        `/iot/devices/${devEui}/health-thresholds`,
+        body
+      );
+      return res.data;
+    } catch (error) {
+      console.error(`Update health thresholds ${devEui} FAIL:`, error);
+      throw error;
+    }
+  },
+
+  // ==========================================
   // 更新設備座標 (0x80 0x45 指令, 走獨立 endpoint)
   // ==========================================
   updateDeviceLocation: async (devEui, lat, lon) => {

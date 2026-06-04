@@ -10,6 +10,12 @@ public class DeviceDetailResponseDto {
     private LocalDateTime lastSeenAt;
     private String syncStatus = "SYNCED"; // 同步狀態
     private String healthStatus = "offline"; // online / stale / offline / alarm
+    private String transponderStatus = "offline"; // transponder LoRaWAN reachability: online / offline
+    private LocalDateTime lastAmpDataAt;          // last amp status frame decode time (UTC)
+    private Integer ampOfflineMin = 6;            // per-device amp-freshness offline threshold (minutes)
+    private Integer transponderOfflineMin = 10;   // per-device transponder offline threshold (minutes)
+    private String latitude;   // Device-reported coordinates (Model frame byte 69~107)
+    private String longitude;  // Device-reported coordinates (Model frame byte 69~107)
 
     private BasicInfo basicInfo = new BasicInfo();
     private Settings settings = new Settings();
@@ -17,11 +23,13 @@ public class DeviceDetailResponseDto {
 
     @Data
     public static class BasicInfo {
-        
+
         private String partName = "data sync...";
         private String partNumber = "data sync...";
         private String serialNumber = "data sync...";
+        private String hwVersion = "data sync...";   // Hardware Version (Model frame byte 56~59)
         private String fwVersion = "data sync...";
+        private String mfgDate = "data sync...";      // Manufactured date (Model frame byte 64~67)
     }
 
     @Data
@@ -30,6 +38,7 @@ public class DeviceDetailResponseDto {
         private SystemConfig system = new SystemConfig();
         private LoadingPilot loadingPilot = new LoadingPilot();
         private AlarmMasks alarmMasks = new AlarmMasks();
+        private BenchMode benchMode = new BenchMode();
 
         @Data
         public static class Alarms {
@@ -54,6 +63,22 @@ public class DeviceDetailResponseDto {
             private Integer fwdPilotHighFreq   = -999;     // MHz   (range 261 ~ 1791)
         }
 
+        // Bench Mode PAD/EQ readback (R102 0x94~0xAE, status byte 148~174). -999.0 = not yet synced.
+        @Data
+        public static class BenchMode {
+            private Double port1FwdInputPad   = -999.0;   // byte 148  Port 1 FWD Input PAD
+            private Double port1FwdInputEq    = -999.0;   // byte 150  Port 1 FWD Input EQ
+            private Double portNFwdOutputPad1 = -999.0;   // byte 162  FWD Output PAD group 1
+            private Double portNFwdOutputPad2 = -999.0;   // byte 170  FWD Output PAD group 2
+            private Double portNFwdOutputEq1  = -999.0;   // byte 172  FWD Output EQ group 1
+            private Double portNFwdOutputEq2  = -999.0;   // byte 174  FWD Output EQ group 2
+            private Double portNRevInputPad1  = -999.0;   // byte 156  REV Input PAD group 1
+            private Double portNRevInputPad2  = -999.0;   // byte 166  REV Input PAD group 2
+            private Double portNRevInputPad3  = -999.0;   // byte 168  REV Input PAD group 3
+            private Double port1RevOutputEq   = -999.0;   // byte 158  Port 1 REV Output EQ
+            private Double port1RevOutputPad  = -999.0;   // byte 164  Port 1 REV Output PAD
+        }
+
         @Data
         public static class SystemConfig {
             private Integer logIntervalMin = -999;
@@ -61,6 +86,7 @@ public class DeviceDetailResponseDto {
             private Integer dfuType     = -999;
             private Integer alsc        = -999;
             private Integer settingMode = -999;     // 0 = Bandwidth Pilot, 1 = User Pilot, 3 = Bench
+            private String  locationAddress = "";    // Device-reported address (settings frame byte 51~146, UTF-16)
         }
 
         // Alarm Status Mask (R102 0x28~0x32). 0 = Mask OFF, 1 = Mask ON. -999 = 尚未取得資料.

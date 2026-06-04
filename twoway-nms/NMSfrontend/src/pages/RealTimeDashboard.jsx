@@ -12,6 +12,7 @@ import { DeviceApi } from '../api/deviceApi';
 import { useDevice } from '../contexts/DeviceContext';
 // runtime state enum labels (status byte 67/68).
 import { formatWorkingMode, formatDfuTypeActive } from '../constants/runtimeStateLabels';
+import { formatTemp } from '../utils/temperature';
 
 const formatLastSeen = (iso) => {
   if (!iso) return '—';
@@ -79,7 +80,7 @@ export default function RealTimeDashboard({ devEui, initialData }) {
   const [deviceData, setDeviceData] = useState(initialData || null);
   // 元件生命週期內只發射一次 startMonitor 的 ref
   const hasTriggeredRef = useRef(false);
-  const { requestCommandLock, releaseCommandLock, showToast } = useDevice();
+  const { requestCommandLock, releaseCommandLock, showToast, tempUnit } = useDevice();
 
   // ==========================================
   //  元件載入時，單發觸發監控指令03
@@ -239,7 +240,7 @@ export default function RealTimeDashboard({ devEui, initialData }) {
         <StatusTile
           icon={<ThermostatIcon fontSize="small" />}
           label="Temperature"
-          value={formatSentinel(measurements.temperature, '°C')}
+          value={formatTemp(measurements.temperature, tempUnit)}
           isAlarm={!!activeAlarms.isTempAlarm}
         />
         <StatusTile

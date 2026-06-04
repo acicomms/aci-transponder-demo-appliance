@@ -78,7 +78,8 @@ services:
   twoway-nms-backend:
     build:
       context: ./twoway-nms/NMSbackend
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile.src.backend
+      network: host
     restart: unless-stopped
     ports:
       - "9090:8080"
@@ -110,7 +111,8 @@ services:
   twoway-nms-frontend:
     build:
       context: ./twoway-nms/NMSfrontend
-      dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile.src.frontend
+      network: host
     restart: unless-stopped
     ports:
       - "9080:80"

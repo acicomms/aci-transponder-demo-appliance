@@ -126,7 +126,7 @@ services:
       context: ./middleware
     restart: unless-stopped
     ports:
-      - "5100:5100/udp"
+      - "5001:5001/udp"
 
 volumes:
   postgresqldata:

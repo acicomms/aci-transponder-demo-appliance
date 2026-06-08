@@ -121,14 +121,12 @@ services:
     environment:
       TZ: America/Los_Angeles
 
-middleware:
-  build:
-    context: ./middleware
-
-  restart: unless-stopped
-
-  ports:
-    - "5100:5100/udp"
+  middleware:
+    build:
+      context: ./middleware
+    restart: unless-stopped
+    ports:
+      - "5100:5100/udp"
 
 volumes:
   postgresqldata:

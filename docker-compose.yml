@@ -121,18 +121,14 @@ services:
     environment:
       TZ: America/Los_Angeles
 
-  middleware:
-    image: python:3.12-slim
-    restart: unless-stopped
-    working_dir: /app
-    volumes:
-      - ./middleware:/app
-    command: python3 Middleware_UDP.py
-    ports:
-      - "5100:5100/udp"
-    depends_on:
-      - chirpstack
-      - mosquitto
+middleware:
+  build:
+    context: ./middleware
+
+  restart: unless-stopped
+
+  ports:
+    - "5100:5100/udp"
 
 volumes:
   postgresqldata:

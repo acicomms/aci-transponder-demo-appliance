@@ -23,8 +23,9 @@ from Cryptodome.Util import Counter
 
 # [ChirpStack Settings]
 #SERVER_IP = "127.0.0.1"
-SERVER_IP = "192.168.50.23"
-SERVER_PORT = 1710
+#SERVER_IP = "192.168.50.23"
+SERVER_IP = "chirpstack-gateway-bridge"
+SERVER_PORT = 1700
 
 # [Gateway UDP:5001 Settings]
 #GATEWAY_IP = "192.168.50.130"

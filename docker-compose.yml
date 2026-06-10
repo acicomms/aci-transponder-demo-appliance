@@ -21,7 +21,6 @@ services:
     restart: unless-stopped
     ports:
       - "${GW_BRIDGE_UDP_PORT}:1700/udp"
-      - "${GW_BRIDGE_LEGACY_PORT}:1700/udp"
     volumes:
       - ./configuration/chirpstack-gateway-bridge:/etc/chirpstack-gateway-bridge
     depends_on:

@@ -30,7 +30,7 @@ type="semtech_udp"
 # This defines how the MQTT payloads are encoded. Valid options are:
 # * protobuf:  Protobuf encoding
 # * json:      JSON encoding (easier for debugging, but less compact than 'protobuf')
-marshaler="protobuf"
+marshaler="json"
 
   # MQTT integration configuration.
   [integration.mqtt]

@@ -14,10 +14,11 @@ export default function DeviceHistoryCharts({ devEui }) {
   const [loading, setLoading] = useState(false);
 
 
-  const toLocalISOString = (date) => {
-    const tzOffset = date.getTimezoneOffset() * 60000;
-    return (new Date(date.getTime() - tzOffset)).toISOString().slice(0, -1);
-  };
+  // const toLocalISOString = (date) => {
+  //   const tzOffset = date.getTimezoneOffset() * 60000;
+  //   return (new Date(date.getTime() - tzOffset)).toISOString().slice(0, -1);
+  // };
+  const toUtcIso = (date) => date.toISOString();
 
 
   // 取得歷史資料
@@ -32,7 +33,8 @@ export default function DeviceHistoryCharts({ devEui }) {
       else if (timeRange === '24h') start.setHours(start.getHours() - 24);
       else if (timeRange === '7d') start.setDate(start.getDate() - 7);
       //  使用新的轉換函式 確保傳給後端的是精準的台灣時間字串
-      const data = await DeviceApi.getDeviceHistory(devEui, toLocalISOString(start), toLocalISOString(end));
+      // const data = await DeviceApi.getDeviceHistory(devEui, toLocalISOString(start), toLocalISOString(end));
+      const data = await DeviceApi.getDeviceHistory(devEui, toUtcIso(start), toUtcIso(end));
 
       // 因為後端回傳通常是 createdAt 遞減(最新的在最前) 為了畫圖表將它反轉為遞增
       setHistoryData([...data].reverse());

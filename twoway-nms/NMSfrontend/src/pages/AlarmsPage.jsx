@@ -35,10 +35,11 @@ const toLocalInput = (d) => {
   return new Date(d.getTime() - off).toISOString().slice(0, 16);
 };
 
-// datetime-local input → 後端 ISO_LOCAL_DATE_TIME (補上 :00 秒)
+// UTC with 'Z'
 const toIsoForBackend = (localInput) => {
   if (!localInput) return null;
-  return localInput.length === 16 ? `${localInput}:00` : localInput;
+  const d = new Date(localInput);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 };
 
 const formatDuration = (sec) => {

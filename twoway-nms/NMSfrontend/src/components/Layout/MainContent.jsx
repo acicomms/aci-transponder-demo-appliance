@@ -190,7 +190,11 @@ export default function MainContent({ selectedDevice }) {
     }
   }, [selectedDevice?.gatewayId, isGateway]);
 
-
+  useEffect(() => {
+    if (isApplication) {
+      refreshSidebarData();
+    }
+  }, [selectedDevice?.id, isApplication]);
 
 
 

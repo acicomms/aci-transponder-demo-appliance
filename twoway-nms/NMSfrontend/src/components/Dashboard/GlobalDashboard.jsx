@@ -101,7 +101,62 @@ export default function GlobalDashboard() {
 
   return (
     <Box sx={PAGE_BG_SX}>
-      <PageHeader title="Overview" onRefresh={fetchAll} />
+      <PageHeader title="NEXUS Overview" onRefresh={fetchAll} />
+
+      <Card
+        variant="outlined"
+        sx={{
+          ...SECTION_CARD_SX,
+          height: 120,
+          mb: 3,
+          borderLeft: data.activeAlarms.total >= 5
+            ? `5px solid ${COLOR_ALARM_DARK}`
+            : data.activeAlarms.total > 0
+              ? '5px solid #F59E0B'
+              : `5px solid ${COLOR_ONLINE}`,
+        }}
+      >
+        <CardContent sx={{ py: 2 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            justifyContent="space-between"
+            spacing={2}
+          >
+            <Box>
+              <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                SYSTEM HEALTH
+              </Typography>
+
+              <Typography sx={{ fontSize: '1.4rem', fontWeight: 700 }}>
+                {data.activeAlarms.total >= 5
+                  ? 'Critical'
+                  : data.activeAlarms.total > 0
+                    ? 'Warning'
+                    : 'Normal'}
+              </Typography>
+
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                {data.gateways.online} Gateway Online • {data.devices.total} Devices • {data.activeAlarms.total} Active Alarm
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                px: 2,
+                py: 0.75,
+                borderRadius: 999,
+                bgcolor: data.activeAlarms.total > 0 ? '#FEF3C7' : '#ECFDF5',
+                color: data.activeAlarms.total > 0 ? '#B45309' : COLOR_ONLINE,
+                fontWeight: 700,
+                fontSize: '0.875rem',
+              }}
+            >
+              NETWORK MONITORING ACTIVE
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
 
       {loading && data.gateways.total === 0 ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -114,15 +169,26 @@ export default function GlobalDashboard() {
             sx={{
               display: 'grid',
               gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
-              gap: 2,
+              gap: 2.5,
               mb: 3,
             }}
           >
             <KpiCard
-              label="Gateways"
+              label="Gateway Health"
               icon={<RouterIcon fontSize="small" />}
-              primary={data.gateways.online}
-              secondary={` / ${data.gateways.total}`}
+              segmentedDonut={{
+                total: data.gateways.total,
+                centerLabel: 'Gateway',
+                segments: [
+                  { value: data.gateways.online, name: 'Online', color: COLOR_ONLINE },
+                  { value: data.gateways.offline, name: 'Offline', color: COLOR_OFFLINE },
+                ],
+              }}
+              centerText={`${
+                data.gateways.total > 0
+                  ? Math.round((data.gateways.online / data.gateways.total) * 100)
+                  : 0
+              }%`}
               footer={
                 <>
                   <Dot color={COLOR_ONLINE} />{data.gateways.online} online
@@ -133,34 +199,69 @@ export default function GlobalDashboard() {
               }
             />
             <KpiCard
-              label="Applications"
-              icon={<AppsIcon fontSize="small" />}
-              primary={data.applications.total}
-              footer="across tenant"
-            />
-            <KpiCard
-              label="Devices"
+              label="Device Health"
               icon={<SensorsIcon fontSize="small" />}
-              primary={data.devices.online}
-              secondary={` / ${data.devices.total}`}
+              segmentedDonut={{
+                total: data.devices.total,
+                centerLabel: 'Devices',
+                segments: [
+                  { value: data.devices.online, name: 'Online', color: COLOR_ONLINE },
+                  { value: data.devices.alarm, name: 'Alarm', color: COLOR_ALARM },
+                  { value: data.devices.offline, name: 'Offline', color: COLOR_OFFLINE },
+                ],
+              }}
               footer={
                 <>
-                  <Dot color={COLOR_ONLINE} />{data.devices.online}
+                  <Dot color={COLOR_ONLINE} />{data.devices.online} online
                   <Box component="span" sx={{ ml: 1.5 }}>
-                    <Dot color={COLOR_ALARM} />{data.devices.alarm}
+                    <Dot color={COLOR_ALARM} />{data.devices.alarm} alarm
                   </Box>
                   <Box component="span" sx={{ ml: 1.5 }}>
-                    <Dot color={COLOR_OFFLINE} />{data.devices.offline}
+                    <Dot color={COLOR_OFFLINE} />{data.devices.offline} offline
                   </Box>
                 </>
               }
             />
             <KpiCard
-              label="Active alarms"
+              label="Alarm Health"
               icon={<NotificationsActiveIcon fontSize="small" />}
-              primary={data.activeAlarms.total}
-              primaryColor={data.activeAlarms.total > 0 ? COLOR_ALARM_DARK : undefined}
-              footer="persistent"
+              segmentedDonut={{
+                total: data.activeAlarms.total,
+                centerLabel: 'Alarms',
+                segments: [
+                  {
+                    value: data.activeAlarms.total || 1,
+                    name: 'Active',
+                    color: data.activeAlarms.total > 0 ? COLOR_ALARM : COLOR_ONLINE,
+                  },
+                ],
+              }}
+              centerText={`${data.activeAlarms.total}\nActive`}
+              footer={
+                <>
+                  <Dot color={data.activeAlarms.total > 0 ? COLOR_ALARM : COLOR_ONLINE} />
+                  {data.activeAlarms.total > 0
+                    ? `${data.activeAlarms.total} active`
+                    : 'All clear'}
+                </>
+              }
+            />
+            <KpiCard
+              label="Applications"
+              icon={<AppsIcon fontSize="small" />}
+              segmentedDonut={{
+                total: data.applications.total,
+                centerLabel: data.applications.total === 1 ? 'Group' : 'Groups',
+                segments: [
+                  {
+                    value: data.applications.total || 1,
+                    name: 'Applications',
+                    color: '#2563EB',
+                  },
+                ],
+              }}
+              centerText={`${data.applications.total}\n${data.applications.total === 1 ? 'Group' : 'Groups'}`}
+              footer="across tenant"
             />
           </Box>
 
@@ -330,7 +431,18 @@ function trendOption(trend) {
 
 // ---------- presentational sub-components ----------
 
-function KpiCard({ label, icon, primary, secondary, primaryColor, footer }) {
+function KpiCard({
+    label,
+    icon,
+    primary,
+    secondary,
+    primaryColor,
+    footer,
+    donutPercent,
+    donutColor = '#2563EB',
+    segmentedDonut,
+    centerText,
+  }) {
   return (
     <Card variant="outlined" sx={{ ...SECTION_CARD_SX, height: '100%' }}>
       <CardContent>
@@ -343,22 +455,99 @@ function KpiCard({ label, icon, primary, secondary, primaryColor, footer }) {
           </Typography>
           <Box sx={{ color: 'text.disabled', display: 'flex', alignItems: 'center' }}>{icon}</Box>
         </Stack>
-        <Typography
-          sx={{
-            fontSize: '1.875rem',
-            fontWeight: 500,
-            lineHeight: 1.1,
-            mb: 0.75,
-            color: primaryColor || 'text.primary',
-          }}
-        >
-          {primary}
-          {secondary && (
-            <Box component="span" sx={{ fontSize: '0.875rem', color: 'text.secondary', fontWeight: 400 }}>
-              {secondary}
+          {segmentedDonut ? (
+            <Box sx={{ width: 150, height: 150, mx: 'auto', mb: 1 }}>
+              <ReactECharts
+                option={{
+                  tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)',
+                  },
+                  graphic: {
+                    type: 'text',
+                    left: 'center',
+                    top: 'center',
+                    style: {
+                      text:
+                        centerText ||
+                        `${segmentedDonut.total}\n${segmentedDonut.centerLabel}`,
+                      textAlign: 'center',
+                      fill: '#0F172A',
+                      fontSize: 13,
+                      fontWeight: 600,
+                    },
+                  },
+                  series: [{
+                    type: 'pie',
+                    radius: ['62%', '82%'],
+                    center: ['50%', '50%'],
+                    avoidLabelOverlap: false,
+                    label: { show: false },
+                    labelLine: { show: false },
+                    data: segmentedDonut.segments.map(s => ({
+                      value: s.value,
+                      name: s.name,
+                      itemStyle: { color: s.color },
+                    })),
+                  }],
+                }}
+                style={{ width: '100%', height: '100%' }}
+                notMerge
+              />
             </Box>
-          )}
-        </Typography>
+          ) : donutPercent !== undefined ? (
+          <Box sx={{ position: 'relative', width: 90, height: 90, mx: 'auto', mb: 1 }}>
+            <CircularProgress
+              variant="determinate"
+              value={100}
+              size={90}
+              thickness={5}
+              sx={{ color: '#E5E7EB', position: 'absolute' }}
+            />
+
+            <CircularProgress
+              variant="determinate"
+              value={donutPercent}
+              size={90}
+              thickness={5}
+              sx={{
+                color: donutColor,
+                position: 'absolute',
+              }}
+            />
+
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '1.1rem',
+              }}
+            >
+              {donutPercent}%
+            </Box>
+          </Box>
+        ) : (
+          <Typography
+            sx={{
+              fontSize: '1.875rem',
+              fontWeight: 500,
+              lineHeight: 1.1,
+              mb: 0.75,
+              color: primaryColor || 'text.primary',
+            }}
+          >
+            {primary}
+            {secondary && (
+              <Box component="span" sx={{ fontSize: '0.875rem', color: 'text.secondary', fontWeight: 400 }}>
+                {secondary}
+              </Box>
+            )}
+          </Typography>
+        )}
         <Typography
           variant="caption"
           sx={{ color: 'text.secondary', display: 'block', minHeight: '1.25em' }}

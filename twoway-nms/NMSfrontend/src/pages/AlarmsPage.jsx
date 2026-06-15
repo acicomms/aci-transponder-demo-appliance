@@ -143,6 +143,10 @@ export default function AlarmsPage() {
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   const totalPages = Math.max(1, Math.ceil((data.totalCount || 0) / PAGE_SIZE));
+  const activeCount = data.events.filter(e => e.status === 'ACTIVE').length;
+  const clearedCount = data.events.filter(e => e.status === 'CLEARED').length;
+  const affectedDevices = new Set(data.events.map(e => e.devEui)).size;
+  const categoryCount = new Set(data.events.map(e => e.category)).size;
 
   return (
     <Box sx={PAGE_BG_SX}>
@@ -151,6 +155,20 @@ export default function AlarmsPage() {
         count={data.totalCount}
         onRefresh={() => { setPage(1); fetchEvents(); }}
       />
+
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        <AlarmSummaryCard label="Active" value={activeCount} color="#EF4444" />
+        <AlarmSummaryCard label="Cleared" value={clearedCount} color="#10B981" />
+        <AlarmSummaryCard label="Affected Devices" value={affectedDevices} color="#2563EB" />
+        <AlarmSummaryCard label="Categories" value={categoryCount} color="#7C3AED" />
+      </Box>
 
       {/* Filters */}
       <Card variant="outlined" sx={{ ...SECTION_CARD_SX, mb: 2 }}>
@@ -239,7 +257,7 @@ export default function AlarmsPage() {
               <TableCell sx={BORDERLESS_TABLE_HEAD_SX}>Device</TableCell>
               <TableCell sx={BORDERLESS_TABLE_HEAD_SX}>Category</TableCell>
               <TableCell sx={BORDERLESS_TABLE_HEAD_SX}>Duration</TableCell>
-              <TableCell sx={BORDERLESS_TABLE_HEAD_SX}>Trigger</TableCell>
+              <TableCell sx={BORDERLESS_TABLE_HEAD_SX}>Measured Value</TableCell>
               <TableCell sx={BORDERLESS_TABLE_HEAD_SX}>End Time</TableCell>
             </TableRow>
           </TableHead>
@@ -305,4 +323,22 @@ export default function AlarmsPage() {
       )}
     </Box>
   );
+
+  function AlarmSummaryCard({ label, value, color }) {
+    return (
+      <Card variant="outlined" sx={SECTION_CARD_SX}>
+        <CardContent>
+          <Typography
+            variant="overline"
+            sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.6 }}
+          >
+            {label}
+          </Typography>
+          <Typography sx={{ fontSize: '2rem', fontWeight: 700, color }}>
+            {value}
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 }

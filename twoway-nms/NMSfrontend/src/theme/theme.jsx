@@ -43,12 +43,12 @@ const theme = createTheme({
     // Custom palette key — sidebar (dark zone).
     // Read via theme.palette.sidebar.* in step 2 Sidebar/TopNav rewrite.
     sidebar: {
-      bg:         '#262626', // neutral-800 (warmer/neutral, per colleague ref)
-      text:       '#A3A3A3', // neutral-400
-      muted:      '#737373', // neutral-500
-      hoverBg:    'rgba(255,255,255,0.06)',
-      selectedBg: '#171717', // neutral-900 (dark-on-dark per ref, not blue)
+      bg: '#0F172A',
+      text: '#CBD5E1',
+      muted: '#64748B',
+      selectedBg: '#1D4ED8',
       selectedFg: '#FFFFFF',
+      hoverBg: '#1E293B',
     },
   },
 

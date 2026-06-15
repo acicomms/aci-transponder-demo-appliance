@@ -75,12 +75,12 @@ export default function Sidebar({ onSelect, selectedDevice, view }) {
           <Typography
             sx={{ fontWeight: 700, fontSize: '1.125rem', color: '#FFFFFF', letterSpacing: 0.5 }}
           >
-            NMS
+            NEXUS
           </Typography>
           <Typography
             sx={{ fontWeight: 500, fontSize: '0.7rem', color: 'sidebar.muted', letterSpacing: 0.4 }}
           >
-            V0.1
+            NMS v0.1
           </Typography>
         </Box>
       </Box>

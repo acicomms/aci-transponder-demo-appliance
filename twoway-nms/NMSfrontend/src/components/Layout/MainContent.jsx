@@ -530,7 +530,7 @@ export default function MainContent({ selectedDevice }) {
       <Box sx={PAGE_BG_SX}>
         <PageHeader
           title={selectedDevice.name}
-          kind="Application"
+          kind="Network Group"
           actions={
             <>
               <Button
@@ -562,15 +562,15 @@ export default function MainContent({ selectedDevice }) {
           }
         />
 
-        {/* Application metadata strip — bare on page (no Card wrapper) */}
-        <Box sx={{
-          ...METADATA_STRIP_SX,
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-          mb: 3,
-        }}>
+        <Card variant="outlined" sx={{ ...SECTION_CARD_SX, mb: 3 }}>
+          <CardContent>
+            <Box sx={{
+              ...METADATA_STRIP_SX,
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+            }}>
           <Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              Application ID
+              Group ID
             </Typography>
             <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
               {selectedDevice.id}
@@ -584,14 +584,21 @@ export default function MainContent({ selectedDevice }) {
           </Box>
           <Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              Device count
+              Registered Devices
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 500 }}>{appDevices.length}</Typography>
           </Box>
-        </Box>
+            </Box>
+          </CardContent>
+        </Card>
 
-        <Typography sx={{ ...PAGE_SECTION_HEADING_SX, mb: 2 }}>Devices</Typography>
-        <Table size="small">
+        <Card variant="outlined" sx={SECTION_CARD_SX}>
+          <CardContent>
+            <Typography sx={{ ...PAGE_SECTION_HEADING_SX, mb: 2 }}>
+              Registered Devices
+            </Typography>
+
+            <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell sx={BORDERLESS_TABLE_HEAD_SX}>Name</TableCell>
@@ -627,7 +634,9 @@ export default function MainContent({ selectedDevice }) {
               ))
             )}
           </TableBody>
-        </Table>
+            </Table>
+          </CardContent>
+        </Card>
 
         {/* Rename dialog */}
         <Dialog open={appEditOpen} onClose={handleAppEditClose} maxWidth="sm" fullWidth>
@@ -854,7 +863,7 @@ export default function MainContent({ selectedDevice }) {
               </Box>
             </Box>
 
-            <Card variant="outlined" sx={SECTION_CARD_SX}>
+            <Card variant="outlined" sx={{ ...SECTION_CARD_SX, mb: 3 }}>
               <CardContent>
                 <Typography sx={{ ...SECTION_CARD_TITLE_SX, mb: 2 }}>Update Location</Typography>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>

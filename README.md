@@ -153,7 +153,7 @@ docker ps
 
 ---
 
-## Step 3 — Install Tailscale
+## Step 3 — Install Tailscale (optional)
 
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh

@@ -133,8 +133,8 @@ sudo apt install -y \
 ### Verify Docker installation
 
 ```bash
-docker --version
-docker compose version
+sudo docker --version
+sudo docker compose version
 ```
 
 ---
@@ -151,7 +151,7 @@ sudo reboot
 ### Verify Docker without sudo
 
 ```bash
-docker ps
+sudo docker ps
 ```
 
 </details>
@@ -183,7 +183,7 @@ sudo chown $USER:$USER /opt/aci-transponder-demo
 
 cd /opt/aci-transponder-demo
 
-git clone https://github.com/acicomms/aci-transponder-demo-appliance.git .
+sudo git clone https://github.com/acicomms/aci-transponder-demo-appliance.git .
 ```
 
 You will be asked to enter username and password for pull the files from this private repo.
@@ -210,13 +210,29 @@ nano .env
 ## Step 6 — Start Services
 
 ```bash
-docker compose pull
-docker compose up -d
+sudo docker compose pull
+sudo docker compose up -d
 ```
 
 ---
 
-## Step 7 — Verify Services
+## Step 7 — Run bootstrap to create API Keys, Device Profiles, Gateway, Applications and 4 transponders 
+Edit this preconfig file if needed https://github.com/acicomms/aci-transponder-demo-appliance/blob/main/bootstrap/config.local.yaml 
+
+```bash
+./bootstrap/bootstrap.sh
+```
+
+Open from laptop browser:
+
+```text
+http://<appliance-ip>:8080
+http://<appliance-ip>:9080
+```
+
+---
+
+## Step 8 — Verify Services
 
 Check listening ports:
 
@@ -242,7 +258,7 @@ http://<appliance-ip>:9080
 
 ---
 
-## Step 8 — Verify Auto Recovery After Reboot
+## Step 9 — Verify Auto Recovery After Reboot
 
 ```bash
 sudo reboot
@@ -251,7 +267,7 @@ sudo reboot
 After reboot:
 
 ```bash
-docker compose ps
+sudo docker compose ps
 ```
 
 ---
@@ -299,6 +315,7 @@ aci-transponder-demo-appliance/
 ├── .env.example
 ├── .gitignore
 ├── install.sh
+├── bootstrap/
 ├── configuration/
 │   ├── chirpstack/
 │   ├── chirpstack-gateway-bridge/

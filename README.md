@@ -76,12 +76,17 @@ sudo reboot
 ### Install prerequisite packages
 
 ```bash
+sudo apt update
+
 sudo apt install -y \
     ca-certificates \
     curl \
     gnupg \
     lsb-release \
-    git
+    git \
+    python3 \
+    python3-yaml \
+    python3-requests
 ```
 
 ---
@@ -223,7 +228,7 @@ Expected:
 
 ```text
 TCP 8080
-TCP 3000
+TCP 9080
 TCP 1883
 UDP 1700
 ```
@@ -232,7 +237,7 @@ Open from laptop browser:
 
 ```text
 http://<appliance-ip>:8080
-http://<appliance-ip>:3000
+http://<appliance-ip>:9080
 ```
 
 ---

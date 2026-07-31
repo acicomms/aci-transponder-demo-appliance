@@ -1,0 +1,43 @@
+tenant:
+  name: "ChirpStack"
+
+application:
+  name: "ACI Demo Application"
+  description: "ACI Transponder demo application"
+
+device_profile:
+  name: "ACI Transponder US915"
+  description: "ACI Transponder LoRaWAN 1.0.4 profile"
+  region: "US915"
+  mac_version: "LORAWAN_1_0_4"
+  reg_params_revision: "RP002_1_0_3"
+  supports_otaa: true
+  supports_class_b: false
+  supports_class_c: true
+  flush_queue_on_activate: true
+
+gateway:
+  gateway_id: "aabbccddeeff0001"
+  name: "ACI Demo Gateway"
+  description: "ACI demo appliance gateway"
+
+devices:
+  - name: "ACI NexSync 01"
+    dev_eui: "70b3d57ed005a172"
+    join_eui: "0000000000000000"
+    app_key: "877c9e30fb6c3b18c3b78321f69808b7"
+
+  - name: "ACI NexSync 02"
+    dev_eui: "70b3d57ed005a182"
+    join_eui: "0000000000000000"
+    app_key: "20f0b9f53b8cf10d171fe8ac47522b60"
+
+  - name: "ACI NexSync 03"
+    dev_eui: "70b3d57ed005a192"
+    join_eui: "0000000000000000"
+    app_key: "1b85a69ee392ccb4f4e6895f804ba3c5"
+
+  - name: "ACI NexSync 04"
+    dev_eui: "70b3d57ed005a1b2"
+    join_eui: "0000000000000000"
+    app_key: "a23c91551bf8d0478922e6047d5a3f11"

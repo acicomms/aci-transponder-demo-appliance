@@ -2,7 +2,7 @@
 [[regions]]
 
   # ID is an use-defined identifier for this region.
-  id = "us915"
+  id = "us915_0"
 
   # Description is a short description for this region.
   description = "US915 (channels 0-7 + 64)"
@@ -44,7 +44,7 @@
         # The topic prefix can be used to define the region of the gateway.
         # Note, there is no need to add a trailing '/' to the prefix. The trailing
         # '/' is automatically added to the prefix if it is configured.
-        topic_prefix = "us915"
+        topic_prefix = "us915_0"
 
         # Shared subscription name.
         #
@@ -57,7 +57,7 @@
         share_name = "chirpstack"
 
         # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
-        server = "tcp://mosquitto:1883"
+        server = "tcp://localhost:1883"
 
         # Connect with the given username (optional)
         username = ""
@@ -81,6 +81,15 @@
         # connects to an MQTT broker. By setting this flag you are indicating
         # that no messages saved by the broker for this client should be delivered.
         clean_session = false
+
+        # Session expiry interval (MQTT 5+).
+        #
+        # This defines how long the broker keeps the session state after the client
+        # disconnects. Only applicable when the broker supports MQTT 5 or higher.
+        # Leave unset or set to 0 to expire immediately (stateless). Use a non-zero
+        # value (e.g. 10m or 24h) to resume subscriptions and queued QoS 1/2 messages
+        # when reconnecting.
+        session_expiry_interval="0s"
 
         # Client ID
         #

@@ -23,21 +23,21 @@ gateway:
 
 devices:
   - name: "ACI NexSync 01"
-    dev_eui: "70b3d57ed005a172"
+    dev_eui: "70b3d57ed005a1a6"
     join_eui: "0000000000000000"
-    app_key: "877c9e30fb6c3b18c3b78321f69808b7"
+    app_key: "3b21a3fad4b91d0d583f70719c8f1e64"
 
   - name: "ACI NexSync 02"
-    dev_eui: "70b3d57ed005a182"
+    dev_eui: "70b3d57ed005a1a5"
     join_eui: "0000000000000000"
-    app_key: "20f0b9f53b8cf10d171fe8ac47522b60"
+    app_key: "c785707c01712d9d1d4552874e857272"
 
   - name: "ACI NexSync 03"
-    dev_eui: "70b3d57ed005a192"
+    dev_eui: "70b3d57ed005a1a4"
     join_eui: "0000000000000000"
-    app_key: "1b85a69ee392ccb4f4e6895f804ba3c5"
+    app_key: "a7a7324bfdca296132be51a03f97f786"
 
   - name: "ACI NexSync 04"
-    dev_eui: "70b3d57ed005a1b2"
+    dev_eui: "70b3d57ed005a1a7"
     join_eui: "0000000000000000"
-    app_key: "a23c91551bf8d0478922e6047d5a3f11"
+    app_key: "76c05e6d5f195b2bfce56ff3d7074e52"

@@ -1,11 +1,11 @@
-# This file contains an example US915 example (channels 0-7 + 64).
+# This file contains an example US915 example (channels 8-15 + 65).
 [[regions]]
 
   # ID is an use-defined identifier for this region.
-  id = "us915"
+  id = "us915_1"
 
   # Description is a short description for this region.
-  description = "US915 (channels 0-7 + 64)"
+  description = "US915 (channels 8-15 + 65)"
 
   # Common-name refers to the common-name of this region as defined by
   # the LoRa Alliance.
@@ -44,7 +44,7 @@
         # The topic prefix can be used to define the region of the gateway.
         # Note, there is no need to add a trailing '/' to the prefix. The trailing
         # '/' is automatically added to the prefix if it is configured.
-        topic_prefix = "us915"
+        topic_prefix = "us915_1"
 
         # Shared subscription name.
         #
@@ -57,7 +57,7 @@
         share_name = "chirpstack"
 
         # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
-        server = "tcp://mosquitto:1883"
+        server = "tcp://localhost:1883"
 
         # Connect with the given username (optional)
         username = ""
@@ -81,6 +81,15 @@
         # connects to an MQTT broker. By setting this flag you are indicating
         # that no messages saved by the broker for this client should be delivered.
         clean_session = false
+
+        # Session expiry interval (MQTT 5+).
+        #
+        # This defines how long the broker keeps the session state after the client
+        # disconnects. Only applicable when the broker supports MQTT 5 or higher.
+        # Leave unset or set to 0 to expire immediately (stateless). Use a non-zero
+        # value (e.g. 10m or 24h) to resume subscriptions and queued QoS 1/2 messages
+        # when reconnecting.
+        session_expiry_interval="0s"
 
         # Client ID
         #
@@ -115,55 +124,55 @@
     # ChirpStack Concentratord daemon. In any other case, this configuration
     # is ignored.
     [[regions.gateway.channels]]
-      frequency = 902300000
+      frequency = 903900000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 902500000
+      frequency = 904100000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 902700000
+      frequency = 904300000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 902900000
+      frequency = 904500000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 903100000
+      frequency = 904700000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 903300000
+      frequency = 904900000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 903500000
+      frequency = 905100000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 903700000
+      frequency = 905300000
       bandwidth = 125000
       modulation = "LORA"
       spreading_factors = [7, 8, 9, 10]
 
     [[regions.gateway.channels]]
-      frequency = 903000000
+      frequency = 904600000
       bandwidth = 500000
       modulation = "LORA"
       spreading_factors = [8]
@@ -238,7 +247,7 @@
     # Use this when ony a sub-set of the by default enabled channels are being
     # used. For example when only using the first 8 channels of the US band.
     # Note: when left blank / empty array, all channels will be enabled.
-    enabled_uplink_channels = [0, 1, 2, 3, 4, 5, 6, 7, 64]
+    enabled_uplink_channels = [8, 9, 10, 11, 12, 13, 14, 15, 65]
 
 
     # Rejoin-request configuration (LoRaWAN 1.1)

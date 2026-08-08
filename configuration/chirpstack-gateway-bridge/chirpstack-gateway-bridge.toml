@@ -35,10 +35,10 @@ marshaler="json"
   # MQTT integration configuration.
   [integration.mqtt]
   # Event topic template.
-  event_topic_template="us915/gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+  event_topic_template="us915_1/gateway/{{ .GatewayID }}/event/{{ .EventType }}"
 
   # Command topic template.
-  command_topic_template="us915/gateway/{{ .GatewayID }}/command/#"
+  command_topic_template="us915_1/gateway/{{ .GatewayID }}/command/#"
 
   # MQTT authentication.
   [integration.mqtt.auth]
